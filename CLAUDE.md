@@ -3,8 +3,9 @@
 Interface gráfica leve em CustomTkinter para o yt-dlp, mantida num fork que recebe o upstream sem conflitos.
 
 ## Regra do fork (obrigatório)
-- **Nunca altere arquivos do upstream.** Todo trabalho fica em `videobay_gui/`, neste `CLAUDE.md` e em
-  `.github/workflows/videobay-*.yml`. Verificação: `git diff upstream/master --stat`.
+- **Nunca altere arquivos do upstream.** Todo trabalho fica em `videobay_gui/`, neste `CLAUDE.md`, em
+  `.github/workflows/videobay-*.yml` e em `.github/README.md` (o GitHub o exibe no lugar do
+  `README.md` da raiz, que é do upstream e muda com frequência). Verificação: `git diff upstream/master --stat`.
 - A GUI usa o yt-dlp só pela API pública `yt_dlp.YoutubeDL` (dependência de caminho editável `..`).
 - Nada deste projeto é enviado ao yt-dlp original: sem PRs, issues ou comentários no upstream.
 

@@ -7,7 +7,8 @@ O fork precisa receber as atualizações do yt-dlp sem conflitos de merge.
 
 ## Decisão
 Todo o código da GUI fica em `videobay_gui/`, com `pyproject.toml`, `Makefile`, `.gitignore` e `docs/` próprios.
-Fora dele, só entram arquivos novos com prefixo próprio: `CLAUDE.md` e `.github/workflows/videobay-*.yml`.
+Fora dele, só entram arquivos novos com prefixo próprio: `CLAUDE.md`, `.github/workflows/videobay-*.yml` e `.github/README.md`
+(a página do fork no GitHub, que tem prioridade sobre o `README.md` do upstream).
 O yt-dlp é uma dependência de caminho editável (`yt-dlp = { path = "..", editable = true }`), então a GUI usa
 o código do fork já sincronizado. A GUI consome apenas a API pública `yt_dlp.YoutubeDL`.
 
