@@ -37,7 +37,7 @@
 
 ## F-04 Fila
 - [x] S-013 Máquina de estados de `VideoDownloadJob`
-- [ ] S-014 `VideoDownloadJobQueue` com limite de concorrência
+- [x] S-014 `VideoDownloadJobQueue` com limite de concorrência
 - [ ] S-015 Cancelar e tentar de novo
 - [ ] S-016 Rejeitar duplicata
   - Edge cases: EC-10
