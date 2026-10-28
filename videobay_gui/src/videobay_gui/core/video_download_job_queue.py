@@ -8,6 +8,10 @@ class UnknownVideoDownloadJobError(KeyError):
     pass
 
 
+class DuplicateVideoDownloadRequestError(Exception):
+    pass
+
+
 class VideoDownloadJobCancellationEffect(StrEnum):
     CANCELLED_BEFORE_START = "cancelled_before_start"
     STOP_RUNNING_DOWNLOAD_REQUESTED = "stop_running_download_requested"
@@ -29,6 +33,7 @@ class VideoDownloadJobQueue:
     def enqueue_video_download_request(
         self, video_download_request: VideoDownloadRequest
     ) -> VideoDownloadJob:
+        self.reject_duplicate_of_active_job(video_download_request)
         self.last_assigned_video_download_job_identifier += 1
         new_video_download_job = VideoDownloadJob(
             self.last_assigned_video_download_job_identifier, video_download_request
@@ -79,9 +84,9 @@ class VideoDownloadJobQueue:
         return VideoDownloadJobCancellationEffect.NOTHING_TO_CANCEL
 
     def retry_video_download_job(self, video_download_job_identifier: int) -> VideoDownloadJob:
-        retried_job = self.find_video_download_job(
-            video_download_job_identifier
-        ).transition_video_download_job_to(VideoDownloadJobStatus.QUEUED)
+        job_to_retry = self.find_video_download_job(video_download_job_identifier)
+        self.reject_duplicate_of_active_job(job_to_retry.video_download_request)
+        retried_job = job_to_retry.transition_video_download_job_to(VideoDownloadJobStatus.QUEUED)
         self.store_video_download_job(retried_job)
         return retried_job
 
@@ -95,6 +100,16 @@ class VideoDownloadJobQueue:
 
     def list_video_download_jobs(self) -> tuple[VideoDownloadJob, ...]:
         return tuple(self.video_download_jobs_by_identifier.values())
+
+    def reject_duplicate_of_active_job(self, video_download_request: VideoDownloadRequest) -> None:
+        # WHY: EC-10. Two active jobs writing the same file would race on the same .part file;
+        # finished jobs never block a new attempt (the no-overwrite check handles EC-07).
+        for video_download_job in self.video_download_jobs_by_identifier.values():
+            if (
+                video_download_job.is_video_download_job_active
+                and video_download_job.video_download_request == video_download_request
+            ):
+                raise DuplicateVideoDownloadRequestError(video_download_request.media_url)
 
     def count_running_jobs(self) -> int:
         return sum(

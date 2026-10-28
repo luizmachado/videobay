@@ -39,7 +39,7 @@
 - [x] S-013 Máquina de estados de `VideoDownloadJob`
 - [x] S-014 `VideoDownloadJobQueue` com limite de concorrência
 - [x] S-015 Cancelar e tentar de novo
-- [ ] S-016 Rejeitar duplicata
+- [x] S-016 Rejeitar duplicata
   - Edge cases: EC-10
 - [ ] S-017 View da fila
 - [ ] S-018 Fechar com jobs ativos
