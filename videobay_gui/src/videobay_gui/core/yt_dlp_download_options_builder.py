@@ -44,6 +44,7 @@ def build_yt_dlp_download_options(
         "outtmpl": {"default": build_output_path_template(video_download_request)},
         "overwrites": False,
         **build_yt_dlp_playlist_scope_options(video_download_request),
+        **build_yt_dlp_subtitle_options(video_download_request.selected_subtitle_languages),
     }
     audio_output_codec = video_download_request.media_quality_choice.audio_output_codec
     if audio_output_codec is not None:
@@ -90,6 +91,17 @@ def find_download_blocking_problem(
     if video_download_request.media_quality_choice.is_audio_only and not is_ffmpeg_available:
         return FFMPEG_REQUIRED_FOR_AUDIO_EXTRACTION_NOTICE
     return None
+
+
+def build_yt_dlp_subtitle_options(selected_subtitle_languages: tuple[str, ...]) -> dict[str, Any]:
+    if not selected_subtitle_languages:
+        return {}
+    # WHY: side files (.srt preferred, else .vtt) need no ffmpeg, unlike embedding.
+    return {
+        "writesubtitles": True,
+        "subtitleslangs": list(selected_subtitle_languages),
+        "subtitlesformat": "srt/vtt/best",
+    }
 
 
 def build_output_path_template(video_download_request: VideoDownloadRequest) -> str:

@@ -50,7 +50,7 @@
   - Edge cases: EC-12
 - [x] S-020 Seleção de itens → `playlist_items`
   - Edge cases: EC-11
-- [ ] S-021 Legendas
+- [x] S-021 Legendas
   - Edge cases: EC-13
 - [ ] S-022 View de seleção de playlist e legendas
 - [ ] S-023 Mensagem de extractor quebrado

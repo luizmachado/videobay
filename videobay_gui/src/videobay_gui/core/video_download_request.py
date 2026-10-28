@@ -11,3 +11,4 @@ class VideoDownloadRequest:
     is_playlist_download: bool = False
     # WHY: empty means "every item" for a playlist; ignored for single videos.
     selected_playlist_item_indices: tuple[int, ...] = ()
+    selected_subtitle_languages: tuple[str, ...] = ()

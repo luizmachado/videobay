@@ -6,7 +6,7 @@ from tests.unit.video_download_queue_presenter_harness import (
     queue_harness,
 )
 from videobay_gui.core.media_download_outcome import MediaDownloadOutcome
-from videobay_gui.core.video_download_queue_presenter import NO_PLAYLIST_ITEMS_SELECTED_NOTICE
+from videobay_gui.core.media_download_selection import NO_PLAYLIST_ITEMS_SELECTED_NOTICE
 
 __all__ = ["queue_harness"]
 

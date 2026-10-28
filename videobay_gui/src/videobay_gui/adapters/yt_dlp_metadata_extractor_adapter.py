@@ -97,6 +97,9 @@ def build_inspected_media_summary_from_yt_dlp_info_dict(
         available_video_heights=collect_available_video_heights_from_yt_dlp_formats(
             yt_dlp_info_dict.get("formats") or []
         ),
+        available_subtitle_languages=collect_manual_subtitle_languages_from_yt_dlp_info(
+            yt_dlp_info_dict
+        ),
         inspected_playlist_entries=(
             build_inspected_playlist_entries_from_yt_dlp_entries(
                 yt_dlp_info_dict.get("entries") or []
@@ -104,6 +107,17 @@ def build_inspected_media_summary_from_yt_dlp_info_dict(
             if yt_dlp_info_dict.get("_type") == "playlist"
             else ()
         ),
+    )
+
+
+def collect_manual_subtitle_languages_from_yt_dlp_info(
+    yt_dlp_info_dict: dict[str, Any],
+) -> tuple[str, ...]:
+    # WHY: only uploaded subtitles are offered; "automatic_captions" lists 100+ machine
+    # translations. live_chat is a YouTube chat replay stored as a subtitle track.
+    uploaded_subtitle_tracks: dict[str, Any] = yt_dlp_info_dict.get("subtitles") or {}
+    return tuple(
+        sorted(language for language in uploaded_subtitle_tracks if language != "live_chat")
     )
 
 

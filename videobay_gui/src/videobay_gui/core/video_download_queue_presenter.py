@@ -4,7 +4,12 @@ from typing import Any
 from videobay_gui.core.download_progress_snapshot import DownloadProgressSnapshot
 from videobay_gui.core.media_download_failure import MediaDownloadCancelledError
 from videobay_gui.core.media_download_outcome import MediaDownloadOutcome
-from videobay_gui.core.media_download_selection import MediaDownloadSelection
+from videobay_gui.core.media_download_selection import (
+    MediaDownloadSelection,
+    build_video_download_request_from_selection,
+    compose_enqueue_notice_for_selection,
+    find_playlist_selection_blocking_notice,
+)
 from videobay_gui.core.video_download_job import VideoDownloadJobStatus
 from videobay_gui.core.video_download_job_outcome_messages import (
     describe_download_failure_for_job_row,
@@ -35,7 +40,6 @@ from videobay_gui.ports.videobay_settings_store_port import VideobaySettingsStor
 
 NO_INSPECTED_MEDIA_TO_DOWNLOAD_NOTICE = "Busque um vídeo antes de baixar."
 DUPLICATE_DOWNLOAD_ALREADY_QUEUED_NOTICE = "Esse download já está na fila."
-NO_PLAYLIST_ITEMS_SELECTED_NOTICE = "Marque ao menos um vídeo da playlist."
 
 
 @dataclass(frozen=True)
@@ -101,24 +105,18 @@ class VideoDownloadQueuePresenter:
         if media_download_selection is None:
             self.queue_view.show_download_notice(NO_INSPECTED_MEDIA_TO_DOWNLOAD_NOTICE)
             return
-        selected_playlist_items = (
-            media_download_selection.selected_playlist_item_indices_for_download
+        playlist_selection_blocking_notice = find_playlist_selection_blocking_notice(
+            media_download_selection
         )
-        # WHY: an empty item filter means "whole playlist" to yt-dlp; unchecking everything must
-        # never turn into downloading everything.
-        if media_download_selection.is_playlist_selection and not selected_playlist_items:
-            self.queue_view.show_download_notice(NO_PLAYLIST_ITEMS_SELECTED_NOTICE)
+        if playlist_selection_blocking_notice is not None:
+            self.queue_view.show_download_notice(playlist_selection_blocking_notice)
             return
         output_directory = self.output_directory_preference.load_preferred_output_directory()
         # WHY: the folder may have been unmounted or deleted since it was chosen (EC-06).
         if not self.show_output_directory_problem_if_any(output_directory):
             return
-        video_download_request = VideoDownloadRequest(
-            media_download_selection.media_url,
-            media_download_selection.media_quality_choice,
-            output_directory,
-            is_playlist_download=media_download_selection.is_playlist_selection,
-            selected_playlist_item_indices=selected_playlist_items,
+        video_download_request = build_video_download_request_from_selection(
+            media_download_selection, output_directory
         )
         is_ffmpeg_available = (
             self.queue_ports.ffmpeg_availability_probe.is_ffmpeg_executable_available()
@@ -157,7 +155,11 @@ class VideoDownloadQueuePresenter:
             self.expected_playlist_item_count_by_job[new_job_identifier] = len(
                 video_download_request.selected_playlist_item_indices
             )
-        self.queue_view.show_download_notice(download_options_build_result.ffmpeg_fallback_notice)
+        self.queue_view.show_download_notice(
+            compose_enqueue_notice_for_selection(
+                media_download_selection, download_options_build_result.ffmpeg_fallback_notice
+            )
+        )
         self.show_job_row(new_job_identifier)
         self.start_jobs_with_free_slots()
 

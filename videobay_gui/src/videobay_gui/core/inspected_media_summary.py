@@ -14,6 +14,7 @@ UNKNOWN_MEDIA_TITLE_LABEL = "Sem título"
 UNKNOWN_MEDIA_UPLOADER_LABEL = "Autor desconhecido"
 UNKNOWN_MEDIA_DURATION_LABEL = "Duração desconhecida"
 PLAYLIST_QUALITY_CAP_HEIGHTS = (1080, 720, 480, 360)
+PLAYLIST_SUBTITLE_LANGUAGE_OPTIONS = ("pt", "en", "es")
 
 
 @dataclass(frozen=True)
@@ -34,6 +35,7 @@ class InspectedMediaSummary:
     is_live_broadcast: bool
     available_video_heights: tuple[int, ...] = ()
     inspected_playlist_entries: tuple[InspectedPlaylistEntry, ...] = ()
+    available_subtitle_languages: tuple[str, ...] = ()
 
     @property
     def is_inspected_media_a_playlist(self) -> bool:
@@ -48,6 +50,7 @@ class InspectedMediaSummaryViewModel:
     media_thumbnail_url: str | None
     media_quality_choices: tuple[MediaQualityChoice, ...]
     media_quality_choice_labels: tuple[str, ...]
+    subtitle_language_options: tuple[str, ...] = ()
 
 
 def format_media_duration_for_display(media_duration_seconds: int | None) -> str:
@@ -81,6 +84,7 @@ def build_inspected_media_summary_view_model(
         ),
         media_thumbnail_url=inspected_media_summary.media_thumbnail_url,
         media_quality_choices=media_quality_choices,
+        subtitle_language_options=offered_subtitle_languages_for_summary(inspected_media_summary),
         media_quality_choice_labels=tuple(
             describe_media_quality_choice_for_user(media_quality_choice, highest_available_tier)
             for media_quality_choice in media_quality_choices
@@ -107,3 +111,13 @@ def offered_media_quality_choices_for_summary(
     return build_media_quality_choices_for_available_heights(
         inspected_media_summary.available_video_heights
     )
+
+
+def offered_subtitle_languages_for_summary(
+    inspected_media_summary: InspectedMediaSummary,
+) -> tuple[str, ...]:
+    # WHY: EC-13. The flat playlist listing has no subtitle info, so playlists offer common
+    # languages and items without them are simply skipped by yt-dlp.
+    if inspected_media_summary.is_inspected_media_a_playlist:
+        return PLAYLIST_SUBTITLE_LANGUAGE_OPTIONS
+    return inspected_media_summary.available_subtitle_languages
