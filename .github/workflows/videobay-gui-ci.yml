@@ -1,4 +1,6 @@
 # VideoBay GUI CI. Thin by design: every step is a `make` target you can run locally.
+# PROVENANCE: action pins and the concurrency pattern follow upstream's core.yml, so the
+# upstream zizmor check (test-workflows.yml, pedantic persona) passes on this fork.
 name: videobay-gui-ci
 on:
   push:
@@ -7,20 +9,33 @@ on:
     paths: ["videobay_gui/**", ".github/workflows/videobay-*.yml"]
   workflow_dispatch:
 
-permissions:
-  contents: read
+permissions: {}
+
+concurrency:
+  group: videobay-gui-ci-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
 
 jobs:
   videobay-gui-ci:
+    name: VideoBay GUI lint and headless tests
     runs-on: ubuntu-latest
+    permissions:
+      contents: read  # only to check out the code
     steps:
-      - uses: actions/checkout@v4
-      - uses: astral-sh/setup-uv@v6
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1  # v7.0.1
+        with:
+          persist-credentials: false
+      - uses: astral-sh/setup-uv@37802adc94f370d6bfd71619e3f0bf239e1f3b78  # v7.6.0
       - run: make -C videobay_gui ci
 
   videobay-gui-ui-smoke:
+    name: VideoBay GUI UI smoke tests
     runs-on: ubuntu-latest
+    permissions:
+      contents: read  # only to check out the code
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1  # v7.0.1
+        with:
+          persist-credentials: false
       # podman is preinstalled on ubuntu-latest runners
       - run: make -C videobay_gui test-ui

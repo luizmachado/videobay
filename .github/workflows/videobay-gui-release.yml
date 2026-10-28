@@ -4,18 +4,36 @@ on:
   push:
     tags: ["gui-v*"]
 
-permissions:
-  contents: write
+permissions: {}
+
+concurrency:
+  group: videobay-gui-release-${{ github.ref }}
+  cancel-in-progress: false
 
 jobs:
   videobay-gui-release:
+    name: Build and publish VideoBay GUI binary
     runs-on: ubuntu-latest
+    permissions:
+      contents: write  # gh release create needs to create the release and upload the binary
     steps:
-      - uses: actions/checkout@v4
-      - uses: astral-sh/setup-uv@v6
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1  # v7.0.1
+        with:
+          persist-credentials: false
+      - uses: astral-sh/setup-uv@37802adc94f370d6bfd71619e3f0bf239e1f3b78  # v7.6.0
+        with:
+          # WHY: a published binary must never be built from a cache another run could poison.
+          enable-cache: false
       - run: make -C videobay_gui ci
       - run: make -C videobay_gui binary
       - run: cp videobay_gui/dist/*/videobay-gui videobay-gui-linux-x86_64
-      - uses: softprops/action-gh-release@v2
-        with:
-          files: videobay-gui-linux-x86_64
+      - name: Publish GitHub release
+        env:
+          GH_TOKEN: ${{ github.token }}
+          VIDEOBAY_RELEASE_TAG: ${{ github.ref_name }}
+        # WHY: the runner's gh CLI replaces a third-party release action (zizmor superfluous-actions).
+        run: >-
+          gh release create "${VIDEOBAY_RELEASE_TAG}" videobay-gui-linux-x86_64
+          --repo "${GITHUB_REPOSITORY}"
+          --title "VideoBay GUI ${VIDEOBAY_RELEASE_TAG}"
+          --generate-notes
