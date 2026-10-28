@@ -14,7 +14,7 @@
   - Aceite: o mesmo contrato passa contra o fake e (em integração) contra o yt-dlp real
 - [x] S-004 Formatos disponíveis → opções de qualidade
   - Aceite: só oferece resoluções que existem; "melhor" e "só áudio" sempre presentes
-- [ ] S-005 View: barra de URL + card de mídia com miniatura
+- [x] S-005 View: barra de URL + card de mídia com miniatura
   - Edge cases: EC-14
 
 ## F-02 Download único

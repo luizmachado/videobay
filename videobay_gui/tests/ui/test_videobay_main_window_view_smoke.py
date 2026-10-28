@@ -12,8 +12,6 @@ def test_main_window_view_renders_with_given_title():
     try:
         videobay_main_window_view.update()
         assert videobay_main_window_view.title() == "VideoBay 9.9.9"
-        assert videobay_main_window_view.videobay_welcome_heading_label.cget("text") == (
-            "VideoBay 9.9.9"
-        )
+        assert videobay_main_window_view.media_inspection_panel_view.winfo_ismapped()
     finally:
         videobay_main_window_view.destroy()

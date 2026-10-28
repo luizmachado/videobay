@@ -7,6 +7,7 @@ from tests.fakes.manually_drained_background_worker_pool_fake import (
     ManuallyDrainedBackgroundWorkerPoolFake,
 )
 from tests.fakes.recording_media_inspection_view_fake import RecordingMediaInspectionViewFake
+from tests.fakes.static_thumbnail_image_fetcher_fake import StaticThumbnailImageFetcherFake
 from videobay_gui.core.inspected_media_summary import InspectedMediaSummary
 from videobay_gui.core.media_inspection_failure import (
     MediaInspectionFailedError,
@@ -16,6 +17,8 @@ from videobay_gui.core.media_inspection_failure import (
 from videobay_gui.core.media_inspection_presenter import MediaInspectionPresenter
 
 SAMPLE_VIDEO_URL = "https://youtu.be/abc"
+SAMPLE_THUMBNAIL_URL = "https://i.ytimg.com/vi/abc/hq.jpg"
+SAMPLE_THUMBNAIL_BYTES = b"\xff\xd8fake-jpeg"
 
 
 @dataclass
@@ -24,6 +27,7 @@ class MediaInspectionPresenterTestHarness:
     media_inspection_view_fake: RecordingMediaInspectionViewFake
     media_metadata_extractor_fake: InMemoryMediaMetadataExtractorFake
     background_worker_pool_fake: ManuallyDrainedBackgroundWorkerPoolFake
+    thumbnail_image_fetcher_fake: StaticThumbnailImageFetcherFake
 
     def inspect_media_url_and_drain_background(self, raw_media_url: str) -> None:
         self.media_inspection_presenter.handle_inspect_media_url_requested(raw_media_url)
@@ -40,25 +44,32 @@ def presenter_harness() -> MediaInspectionPresenterTestHarness:
     media_inspection_view_fake = RecordingMediaInspectionViewFake()
     media_metadata_extractor_fake = InMemoryMediaMetadataExtractorFake()
     background_worker_pool_fake = ManuallyDrainedBackgroundWorkerPoolFake()
+    thumbnail_image_fetcher_fake = StaticThumbnailImageFetcherFake()
     return MediaInspectionPresenterTestHarness(
         MediaInspectionPresenter(
-            media_inspection_view_fake, media_metadata_extractor_fake, background_worker_pool_fake
+            media_inspection_view_fake,
+            media_metadata_extractor_fake,
+            background_worker_pool_fake,
+            thumbnail_image_fetcher_fake,
         ),
         media_inspection_view_fake,
         media_metadata_extractor_fake,
         background_worker_pool_fake,
+        thumbnail_image_fetcher_fake,
     )
 
 
 def build_sample_inspected_media_summary(
-    media_url: str = SAMPLE_VIDEO_URL, is_live_broadcast: bool = False
+    media_url: str = SAMPLE_VIDEO_URL,
+    is_live_broadcast: bool = False,
+    media_thumbnail_url: str | None = None,
 ) -> InspectedMediaSummary:
     return InspectedMediaSummary(
         media_url=media_url,
         media_title=f"Título de {media_url}",
         media_uploader_name="Canal",
         media_duration_seconds=60,
-        media_thumbnail_url=None,
+        media_thumbnail_url=media_thumbnail_url,
         is_live_broadcast=is_live_broadcast,
     )
 
@@ -218,3 +229,71 @@ def test_stale_result_from_previous_url_is_discarded(
         "show_inspected_media_summary"
     )
     assert shown_view_model.media_title_label == f"Título de {newer_video_url}"
+
+
+def test_thumbnail_is_fetched_in_background_after_summary_is_shown(
+    presenter_harness: MediaInspectionPresenterTestHarness,
+):
+    presenter_harness.media_metadata_extractor_fake.script_media_summary(
+        build_sample_inspected_media_summary(media_thumbnail_url=SAMPLE_THUMBNAIL_URL)
+    )
+    presenter_harness.thumbnail_image_fetcher_fake.script_thumbnail_image_bytes(
+        SAMPLE_THUMBNAIL_URL, SAMPLE_THUMBNAIL_BYTES
+    )
+
+    presenter_harness.inspect_media_url_and_drain_background(SAMPLE_VIDEO_URL)
+    assert presenter_harness.thumbnail_image_fetcher_fake.fetched_thumbnail_urls == []
+    presenter_harness.background_worker_pool_fake.drain_pending_background_tasks()
+
+    assert presenter_harness.media_inspection_view_fake.recorded_view_call_names()[-2:] == [
+        "show_inspected_media_summary",
+        "show_media_thumbnail_image",
+    ]
+    assert (
+        presenter_harness.media_inspection_view_fake.last_recorded_argument_of(
+            "show_media_thumbnail_image"
+        )
+        == SAMPLE_THUMBNAIL_BYTES
+    )
+
+
+@pytest.mark.parametrize("media_thumbnail_url", [None, "https://i.ytimg.com/broken.jpg"])
+def test_ec14_missing_or_failed_thumbnail_shows_placeholder_without_error(
+    presenter_harness: MediaInspectionPresenterTestHarness, media_thumbnail_url: str | None
+):
+    presenter_harness.media_metadata_extractor_fake.script_media_summary(
+        build_sample_inspected_media_summary(media_thumbnail_url=media_thumbnail_url)
+    )
+
+    presenter_harness.inspect_media_url_and_drain_background(SAMPLE_VIDEO_URL)
+    presenter_harness.background_worker_pool_fake.drain_pending_background_tasks()
+
+    view_call_names = presenter_harness.media_inspection_view_fake.recorded_view_call_names()
+    assert view_call_names[-1] == "show_media_thumbnail_placeholder"
+    assert "show_media_inspection_failure" not in view_call_names
+
+
+@pytest.mark.parametrize("stale_thumbnail_fetch_fails", [False, True])
+def test_stale_thumbnail_from_previous_url_is_discarded(
+    presenter_harness: MediaInspectionPresenterTestHarness, stale_thumbnail_fetch_fails: bool
+):
+    newer_video_url = "https://youtu.be/newer"
+    presenter_harness.media_metadata_extractor_fake.script_media_summary(
+        build_sample_inspected_media_summary(media_thumbnail_url=SAMPLE_THUMBNAIL_URL)
+    )
+    if not stale_thumbnail_fetch_fails:
+        presenter_harness.thumbnail_image_fetcher_fake.script_thumbnail_image_bytes(
+            SAMPLE_THUMBNAIL_URL, SAMPLE_THUMBNAIL_BYTES
+        )
+    presenter_harness.inspect_media_url_and_drain_background(SAMPLE_VIDEO_URL)
+
+    presenter_harness.media_inspection_presenter.handle_inspect_media_url_requested(newer_video_url)
+    presenter_harness.background_worker_pool_fake.pending_background_tasks.reverse()
+    presenter_harness.media_metadata_extractor_fake.script_media_summary(
+        build_sample_inspected_media_summary(newer_video_url)
+    )
+    presenter_harness.background_worker_pool_fake.drain_pending_background_tasks()
+
+    view_call_names = presenter_harness.media_inspection_view_fake.recorded_view_call_names()
+    assert "show_media_thumbnail_image" not in view_call_names
+    assert view_call_names[-1] == "show_media_thumbnail_placeholder"

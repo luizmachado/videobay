@@ -7,6 +7,7 @@
 | Inspeção | Consulta de metadados sem baixar | `InspectedMediaSummary`, `InspectedPlaylistSummary` |
 | Falha de inspeção | Categoria de erro ao ler metadados, com mensagem ao usuário | `MediaInspectionFailureKind`, `MediaInspectionFailedError` |
 | Apresentador de inspeção | Liga a barra de URL ao extractor e à view | `MediaInspectionPresenter` |
+| Miniatura | Imagem de capa da mídia; falha nunca é erro (EC-14) | `ThumbnailImageFetcherPort`, `ThumbnailImageFetchFailedError` |
 | Escolha de qualidade | Altura máxima (None = melhor) ou só áudio | `MediaQualityChoice` |
 | Faixa padrão de altura | 4320…144 px; alturas cortadas caem na faixa abaixo | `STANDARD_VIDEO_HEIGHT_TIERS` |
 | Codec de áudio de saída | Formato da extração de áudio | `AudioOutputCodec` |

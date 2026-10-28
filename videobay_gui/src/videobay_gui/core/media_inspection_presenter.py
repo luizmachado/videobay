@@ -16,6 +16,7 @@ from videobay_gui.core.media_url_syntax_validation import (
 from videobay_gui.ports.background_worker_pool_port import BackgroundWorkerPoolPort
 from videobay_gui.ports.media_inspection_view_port import MediaInspectionViewPort
 from videobay_gui.ports.media_metadata_extractor_port import MediaMetadataExtractorPort
+from videobay_gui.ports.thumbnail_image_fetcher_port import ThumbnailImageFetcherPort
 
 
 class MediaInspectionPresenter:
@@ -24,10 +25,12 @@ class MediaInspectionPresenter:
         media_inspection_view: MediaInspectionViewPort,
         media_metadata_extractor: MediaMetadataExtractorPort,
         background_worker_pool: BackgroundWorkerPoolPort,
+        thumbnail_image_fetcher: ThumbnailImageFetcherPort,
     ) -> None:
         self.media_inspection_view = media_inspection_view
         self.media_metadata_extractor = media_metadata_extractor
         self.background_worker_pool = background_worker_pool
+        self.thumbnail_image_fetcher = thumbnail_image_fetcher
         self.latest_inspected_media_summary: InspectedMediaSummary | None = None
         self.latest_requested_media_url: str | None = None
 
@@ -77,6 +80,36 @@ class MediaInspectionPresenter:
         self.media_inspection_view.show_inspected_media_summary(
             build_inspected_media_summary_view_model(inspected_media_summary)
         )
+        self.request_media_thumbnail_for_summary(inspected_media_summary)
+
+    def request_media_thumbnail_for_summary(
+        self, inspected_media_summary: InspectedMediaSummary
+    ) -> None:
+        media_thumbnail_url = inspected_media_summary.media_thumbnail_url
+        if media_thumbnail_url is None:
+            self.media_inspection_view.show_media_thumbnail_placeholder()
+            return
+        requested_media_url = inspected_media_summary.media_url
+        self.background_worker_pool.submit_background_task(
+            lambda: self.thumbnail_image_fetcher.fetch_thumbnail_image_bytes(media_thumbnail_url),
+            lambda thumbnail_image_bytes: self.handle_media_thumbnail_fetched(
+                requested_media_url, thumbnail_image_bytes
+            ),
+            # WHY: a thumbnail failure is cosmetic (EC-14); it never turns into an error message.
+            lambda _thumbnail_fetch_error: self.handle_media_thumbnail_fetched(
+                requested_media_url, None
+            ),
+        )
+
+    def handle_media_thumbnail_fetched(
+        self, requested_media_url: str, thumbnail_image_bytes: bytes | None
+    ) -> None:
+        if requested_media_url != self.latest_requested_media_url:
+            return
+        if thumbnail_image_bytes is None:
+            self.media_inspection_view.show_media_thumbnail_placeholder()
+            return
+        self.media_inspection_view.show_media_thumbnail_image(thumbnail_image_bytes)
 
     def handle_media_inspection_failed(
         self, requested_media_url: str, media_inspection_error: Exception

@@ -2,9 +2,14 @@
 # WHY: customtkinter has no type information, so strict mode would flag
 # every widget call as Unknown.
 # Views stay thin (ADR-0003); all logic lives in the strictly typed core.
+from collections.abc import Callable
+
 import customtkinter
 
-VIDEOBAY_MAIN_WINDOW_INITIAL_GEOMETRY = "720x480"
+from videobay_gui.views.media_inspection_panel_view import MediaInspectionPanelView
+
+VIDEOBAY_MAIN_WINDOW_INITIAL_GEOMETRY = "820x520"
+VIDEOBAY_MAIN_WINDOW_MINIMUM_SIZE = (640, 420)
 
 
 class VideobayMainWindowView(customtkinter.CTk):
@@ -13,12 +18,26 @@ class VideobayMainWindowView(customtkinter.CTk):
         customtkinter.set_appearance_mode("system")
         self.title(videobay_main_window_title)
         self.geometry(VIDEOBAY_MAIN_WINDOW_INITIAL_GEOMETRY)
-        self.videobay_welcome_heading_label = customtkinter.CTkLabel(
-            self,
-            text=videobay_main_window_title,
-            font=customtkinter.CTkFont(size=28, weight="bold"),
-        )
-        self.videobay_welcome_heading_label.pack(expand=True)
+        self.minsize(*VIDEOBAY_MAIN_WINDOW_MINIMUM_SIZE)
+        self.media_inspection_panel_view = MediaInspectionPanelView(self)
+        self.media_inspection_panel_view.pack(fill="both", expand=True)
+
+    def schedule_recurring_ui_callback(
+        self, callback_interval_milliseconds: int, recurring_ui_callback: Callable[[], object]
+    ) -> None:
+        # PROVENANCE: ADR-0004. Worker results only reach widgets through this Tk-thread loop.
+        def run_and_reschedule_recurring_ui_callback() -> None:
+            recurring_ui_callback()
+            self.after(callback_interval_milliseconds, run_and_reschedule_recurring_ui_callback)
+
+        self.after(callback_interval_milliseconds, run_and_reschedule_recurring_ui_callback)
+
+    def bind_main_window_close_callback(self, on_main_window_closing: Callable[[], None]) -> None:
+        def close_main_window() -> None:
+            on_main_window_closing()
+            self.destroy()
+
+        self.protocol("WM_DELETE_WINDOW", close_main_window)
 
     def run_videobay_main_event_loop(self) -> None:
         self.mainloop()

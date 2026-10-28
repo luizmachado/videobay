@@ -10,6 +10,7 @@ requires-python = ">=3.12"
 dependencies = [
     "yt-dlp",
     "customtkinter>=5.2.2",
+    "pillow>=11.0",
 ]
 
 [project.scripts]

@@ -39,6 +39,12 @@ class RecordingMediaInspectionViewFake:
             )
         )
 
+    def show_media_thumbnail_image(self, thumbnail_image_bytes: bytes) -> None:
+        self.recorded_view_calls.append(("show_media_thumbnail_image", thumbnail_image_bytes))
+
+    def show_media_thumbnail_placeholder(self) -> None:
+        self.recorded_view_calls.append(("show_media_thumbnail_placeholder", None))
+
     def recorded_view_call_names(self) -> list[str]:
         return [view_call_name for view_call_name, _ in self.recorded_view_calls]
 
