@@ -1,6 +1,10 @@
 # WHY: the only module allowed to instantiate adapters and views;
 # everything else receives them (ADR-0001).
+import shutil
+import sys
+
 from videobay_gui import __version__
+from videobay_gui.adapters.bundled_deno_runtime_locator import locate_deno_executable_for_yt_dlp
 from videobay_gui.adapters.threading_background_worker_pool_adapter import (
     ThreadingBackgroundWorkerPoolAdapter,
 )
@@ -23,7 +27,12 @@ def build_videobay_gui_application() -> VideobayMainWindowView:
     media_inspection_panel_view = videobay_main_window_view.media_inspection_panel_view
     media_inspection_presenter = MediaInspectionPresenter(
         media_inspection_panel_view,
-        YtDlpMetadataExtractorAdapter(),
+        YtDlpMetadataExtractorAdapter(
+            # PROVENANCE: ADR-0008. sys._MEIPASS only exists inside the PyInstaller binary.
+            deno_executable_path=locate_deno_executable_for_yt_dlp(
+                getattr(sys, "_MEIPASS", None), shutil.which
+            )
+        ),
         background_worker_pool,
         UrllibThumbnailImageFetcherAdapter(),
     )

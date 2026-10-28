@@ -209,3 +209,24 @@ def test_collects_heights_only_from_formats_that_carry_video():
     inspected_media_summary = adapter.extract_inspected_media_summary(SAMPLE_VIDEO_URL)
 
     assert sorted(inspected_media_summary.available_video_heights) == [480, 720, 1080]
+
+
+def test_passes_bundled_deno_path_to_yt_dlp_javascript_runtimes():
+    scripted_client = ScriptedYtDlpInfoExtractingClientFake({"title": "x"})
+    adapter = YtDlpMetadataExtractorAdapter(
+        scripted_client.build_from_yt_dlp_params, deno_executable_path="/bundle/deno"
+    )
+
+    adapter.extract_inspected_media_summary(SAMPLE_VIDEO_URL)
+
+    assert scripted_client.received_yt_dlp_params["js_runtimes"] == {
+        "deno": {"path": "/bundle/deno"}
+    }
+
+
+def test_leaves_yt_dlp_default_runtime_lookup_when_no_deno_path_is_known():
+    adapter, scripted_client = build_adapter_with_scripted_client({"title": "x"})
+
+    adapter.extract_inspected_media_summary(SAMPLE_VIDEO_URL)
+
+    assert "js_runtimes" not in scripted_client.received_yt_dlp_params

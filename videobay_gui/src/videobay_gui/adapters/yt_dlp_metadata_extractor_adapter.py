@@ -66,8 +66,8 @@ class SilencedYtDlpLoggerForGui:
         return None
 
 
-def build_yt_dlp_media_inspection_params() -> dict[str, Any]:
-    return {
+def build_yt_dlp_media_inspection_params(deno_executable_path: str | None) -> dict[str, Any]:
+    yt_dlp_media_inspection_params: dict[str, Any] = {
         "quiet": True,
         "no_warnings": True,
         "skip_download": True,
@@ -76,6 +76,11 @@ def build_yt_dlp_media_inspection_params() -> dict[str, Any]:
         "socket_timeout": YT_DLP_INSPECTION_SOCKET_TIMEOUT_SECONDS,
         "logger": SilencedYtDlpLoggerForGui(),
     }
+    if deno_executable_path is not None:
+        # PROVENANCE: ADR-0008. YouTube needs a JS runtime for its challenges; without a path
+        # yt-dlp keeps its default lookup (deno on PATH) and may return fewer formats.
+        yt_dlp_media_inspection_params["js_runtimes"] = {"deno": {"path": deno_executable_path}}
+    return yt_dlp_media_inspection_params
 
 
 class YtDlpMetadataExtractorAdapter:
@@ -84,13 +89,15 @@ class YtDlpMetadataExtractorAdapter:
         yt_dlp_client_factory: YtDlpInfoExtractingClientFactory = (
             build_real_yt_dlp_info_extracting_client
         ),
+        deno_executable_path: str | None = None,
     ) -> None:
         self.yt_dlp_client_factory = yt_dlp_client_factory
+        self.deno_executable_path = deno_executable_path
 
     def extract_inspected_media_summary(self, media_url: str) -> InspectedMediaSummary:
         try:
             with self.yt_dlp_client_factory(
-                build_yt_dlp_media_inspection_params()
+                build_yt_dlp_media_inspection_params(self.deno_executable_path)
             ) as yt_dlp_client:
                 yt_dlp_info_dict = yt_dlp_client.extract_info(media_url, download=False)
         except YoutubeDLError as yt_dlp_error:

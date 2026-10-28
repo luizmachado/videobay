@@ -8,7 +8,7 @@ dynamic = ["version"]
 description = "Lightweight CustomTkinter GUI for yt-dlp"
 requires-python = ">=3.12"
 dependencies = [
-    "yt-dlp",
+    "yt-dlp[default]",
     "customtkinter>=5.2.2",
     "pillow>=11.0",
 ]
