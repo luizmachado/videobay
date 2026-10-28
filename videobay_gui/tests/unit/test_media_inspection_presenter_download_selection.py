@@ -8,6 +8,7 @@ from tests.unit.media_inspection_presenter_harness import (
     build_sample_inspected_media_summary,
     presenter_harness,
 )
+from videobay_gui.core.inspected_media_summary import InspectedPlaylistEntry
 from videobay_gui.core.media_download_selection import MediaDownloadSelection
 from videobay_gui.core.media_quality_choice import (
     BEST_AVAILABLE_MEDIA_QUALITY_CHOICE,
@@ -92,3 +93,21 @@ def test_new_inspection_resets_selection_to_best(
             SAMPLE_VIDEO_URL, BEST_AVAILABLE_MEDIA_QUALITY_CHOICE, f"Título de {SAMPLE_VIDEO_URL}"
         )
     )
+
+
+def test_playlist_selection_index_maps_to_the_playlist_quality_caps(
+    presenter_harness: MediaInspectionPresenterTestHarness,
+):
+    presenter_harness.media_metadata_extractor_fake.script_media_summary(
+        replace(
+            build_sample_inspected_media_summary(),
+            inspected_playlist_entries=(InspectedPlaylistEntry(1, "Aula 1", 60, True),),
+        )
+    )
+    presenter_harness.inspect_media_url_and_drain_background(SAMPLE_VIDEO_URL)
+
+    presenter_harness.media_inspection_presenter.handle_media_quality_choice_selected(1)
+
+    current_selection = presenter_harness.media_inspection_presenter.current_download_selection()
+    assert current_selection is not None
+    assert current_selection.media_quality_choice == MediaQualityChoice(maximum_video_height=1080)

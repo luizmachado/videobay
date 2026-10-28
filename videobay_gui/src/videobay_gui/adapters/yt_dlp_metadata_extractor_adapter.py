@@ -11,7 +11,7 @@ from videobay_gui.adapters.yt_dlp_shared_client_configuration import (
     build_yt_dlp_javascript_runtime_params,
     unwrap_original_yt_dlp_error_cause,
 )
-from videobay_gui.core.inspected_media_summary import InspectedMediaSummary
+from videobay_gui.core.inspected_media_summary import InspectedMediaSummary, InspectedPlaylistEntry
 from videobay_gui.core.media_inspection_failure import (
     MediaInspectionFailedError,
     MediaInspectionFailureKind,
@@ -20,6 +20,7 @@ from videobay_gui.core.media_inspection_failure import (
 # WHY: without a timeout a dead connection freezes the inspection worker forever (EC-03).
 YT_DLP_INSPECTION_SOCKET_TIMEOUT_SECONDS = 15
 LIVE_OR_UPCOMING_YT_DLP_LIVE_STATUSES = frozenset({"is_live", "is_upcoming"})
+UNAVAILABLE_PLAYLIST_ENTRY_TITLES = frozenset({"[Private video]", "[Deleted video]"})
 # PROVENANCE: substrings of yt-dlp extractor messages (youtube/_video.py, common.py login
 # helpers); yt-dlp raises plain ExtractorError for these, so the text is the only signal.
 AGE_RESTRICTION_MESSAGE_FRAGMENTS = ("confirm your age", "age-restricted", "age restricted")
@@ -96,6 +97,40 @@ def build_inspected_media_summary_from_yt_dlp_info_dict(
         available_video_heights=collect_available_video_heights_from_yt_dlp_formats(
             yt_dlp_info_dict.get("formats") or []
         ),
+        inspected_playlist_entries=(
+            build_inspected_playlist_entries_from_yt_dlp_entries(
+                yt_dlp_info_dict.get("entries") or []
+            )
+            if yt_dlp_info_dict.get("_type") == "playlist"
+            else ()
+        ),
+    )
+
+
+def build_inspected_playlist_entries_from_yt_dlp_entries(
+    yt_dlp_flat_entries: list[dict[str, Any] | None],
+) -> tuple[InspectedPlaylistEntry, ...]:
+    return tuple(
+        build_single_inspected_playlist_entry(playlist_item_index, yt_dlp_flat_entry)
+        for playlist_item_index, yt_dlp_flat_entry in enumerate(yt_dlp_flat_entries, start=1)
+    )
+
+
+def build_single_inspected_playlist_entry(
+    playlist_item_index: int, yt_dlp_flat_entry: dict[str, Any] | None
+) -> InspectedPlaylistEntry:
+    fallback_entry_title = f"Vídeo {playlist_item_index}"
+    # PROVENANCE: yt-dlp's flat YouTube listing keeps private/deleted items as placeholders
+    # titled "[Private video]"/"[Deleted video]", and some extractors yield None entries (EC-11).
+    if yt_dlp_flat_entry is None:
+        return InspectedPlaylistEntry(playlist_item_index, fallback_entry_title, None, False)
+    entry_title = str(yt_dlp_flat_entry.get("title") or fallback_entry_title)
+    entry_duration_seconds = yt_dlp_flat_entry.get("duration")
+    return InspectedPlaylistEntry(
+        playlist_item_index,
+        entry_title,
+        int(entry_duration_seconds) if entry_duration_seconds is not None else None,
+        entry_title not in UNAVAILABLE_PLAYLIST_ENTRY_TITLES,
     )
 
 

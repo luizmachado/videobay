@@ -1,6 +1,7 @@
 from videobay_gui.core.inspected_media_summary import (
     InspectedMediaSummary,
     build_inspected_media_summary_view_model,
+    offered_media_quality_choices_for_summary,
 )
 from videobay_gui.core.media_download_selection import MediaDownloadSelection
 from videobay_gui.core.media_inspection_failure import (
@@ -8,9 +9,6 @@ from videobay_gui.core.media_inspection_failure import (
     MediaInspectionFailureKind,
     describe_media_inspection_failure_for_user,
     is_media_inspection_failure_retryable,
-)
-from videobay_gui.core.media_quality_choice import (
-    build_media_quality_choices_for_available_heights,
 )
 from videobay_gui.core.media_url_syntax_validation import (
     MediaUrlRejectionReason,
@@ -46,8 +44,8 @@ class MediaInspectionPresenter:
         inspected_media_summary = self.latest_inspected_media_summary
         if inspected_media_summary is None:
             return None
-        offered_media_quality_choices = build_media_quality_choices_for_available_heights(
-            inspected_media_summary.available_video_heights
+        offered_media_quality_choices = offered_media_quality_choices_for_summary(
+            inspected_media_summary
         )
         selected_choice_index = self.selected_media_quality_choice_index
         # WHY: the menu is rebuilt on every inspection; a stale index falls back to "Melhor".

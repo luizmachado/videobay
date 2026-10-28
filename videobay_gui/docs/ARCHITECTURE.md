@@ -47,7 +47,7 @@
 ## Fluxo de dados (caminho principal)
 1. O usuário cola a URL, e `validate_media_url_syntax` valida a sintaxe.
 2. O worker chama `extract_info(download=False, extract_flat="in_playlist")`.
-3. Os metadados viram `InspectedMediaSummary` (vídeo) ou `InspectedPlaylistSummary`.
+3. Os metadados viram `InspectedMediaSummary`; numa playlist, com `inspected_playlist_entries` da listagem flat.
 4. O presenter monta as opções de qualidade, áudio e legendas.
 5. "Baixar" monta um `VideoDownloadRequest`, que vira `VideoDownloadJob` (`queued`) na `VideoDownloadJobQueue`.
 6. O worker livre executa: `build_yt_dlp_download_options` traduz o request em opções do yt-dlp.
