@@ -15,5 +15,5 @@
 | Job de download | Pedido na fila, com estado | `VideoDownloadJob`, `VideoDownloadJobStatus` |
 | Fila de downloads | Jobs ordenados com limite de concorrência | `VideoDownloadJobQueue` |
 | Instantâneo de progresso | Estado do progresso num momento | `DownloadProgressSnapshot` |
-| Construtor de opções | Traduz o pedido para `ydl_opts` | `YtDlpOptionsBuilder` |
+| Construtor de opções | Traduz o pedido para opções do yt-dlp (+ aviso de fallback) | `build_yt_dlp_download_options`, `YtDlpDownloadOptionsBuildResult` |
 | Configurações | Preferências persistidas (pasta, tema, limite) | `VideobayUserSettings` |

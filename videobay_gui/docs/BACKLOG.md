@@ -20,7 +20,7 @@
 ## F-02 Download único
 - [x] S-024 Deno embutido + `yt-dlp[default]` (ADR-0008)
   - Aceite: o binário contém deno e os scripts do yt-dlp-ejs; o adapter passa `js_runtimes` quando há deno; checksum errado aborta o build
-- [ ] S-006 `YtDlpOptionsBuilder`: qualidade → format string, com fallback sem ffmpeg
+- [x] S-006 `YtDlpOptionsBuilder`: qualidade → format string, com fallback sem ffmpeg
   - Edge cases: EC-04
 - [ ] S-007 Settings store + pasta de destino
   - Edge cases: EC-06, EC-15

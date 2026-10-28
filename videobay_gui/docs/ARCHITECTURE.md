@@ -49,7 +49,7 @@
 3. Os metadados viram `InspectedMediaSummary` (vídeo) ou `InspectedPlaylistSummary`.
 4. O presenter monta as opções de qualidade, áudio e legendas.
 5. "Baixar" monta um `VideoDownloadRequest`, que vira `VideoDownloadJob` (`queued`) na `VideoDownloadJobQueue`.
-6. O worker livre executa: `YtDlpOptionsBuilder` traduz o request em `ydl_opts`.
+6. O worker livre executa: `build_yt_dlp_download_options` traduz o request em opções do yt-dlp.
 7. Os progress hooks viram `DownloadProgressSnapshot` → `queue.Queue` → thread do Tk (`after(100ms)`) → presenter → view.
 8. O job termina como `completed`, `failed` (com mensagem traduzida) ou `cancelled`.
 
@@ -59,7 +59,7 @@
 - `VideoDownloadJob`: `queued → running → completed | failed | cancelled`; `failed | cancelled → queued` (tentar de novo).
   Transição inválida lança `InvalidVideoDownloadJobTransitionError`.
 - `DownloadProgressSnapshot`: downloaded_bytes, total_bytes (exato ou estimado), speed, eta, percentage ou `None`.
-- `YtDlpOptionsBuilder` (puro): request + capacidades (ffmpeg?) → dict de opções.
+- `build_yt_dlp_download_options` (puro): request + capacidades (ffmpeg?) → opções do yt-dlp + aviso de fallback.
 
 ## Edge cases
 | ID | Cenário | Comportamento esperado | Fatia |
