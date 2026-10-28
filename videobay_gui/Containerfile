@@ -1,0 +1,20 @@
+# Builder/test image for videobay_gui (ADR-0005, ADR-0006). Build context: videobay_gui/.
+# The repository is bind-mounted at runtime, so no source is baked into the image.
+# PROVENANCE: bookworm keeps glibc old enough for the PyInstaller binary to run on most current distros.
+FROM docker.io/library/python:3.12-slim-bookworm
+
+RUN apt-get update \
+ && apt-get install -y --no-install-recommends xvfb xauth binutils git make libtk8.6 fonts-dejavu-core \
+ && rm -rf /var/lib/apt/lists/*
+
+COPY --from=ghcr.io/astral-sh/uv:0.8.17 /uv /usr/local/bin/uv
+
+# WHY: the venv and caches live outside the bind mount so they never clash with the host's .venv.
+ENV UV_PROJECT_ENVIRONMENT=/tmp/videobay-container-venv \
+    UV_CACHE_DIR=/tmp/videobay-uv-cache \
+    UV_PYTHON_DOWNLOADS=never \
+    UV_PYTHON=/usr/local/bin/python3 \
+    HOME=/tmp
+
+RUN useradd --uid 10001 --no-create-home videobay-builder
+USER 10001

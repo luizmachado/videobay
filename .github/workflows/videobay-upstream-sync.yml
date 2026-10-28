@@ -1,0 +1,48 @@
+# Daily merge of yt-dlp upstream into this fork (ADR-0002). Pushes only when the GUI CI stays green.
+name: videobay-upstream-sync
+on:
+  schedule:
+    - cron: "17 6 * * *"
+  workflow_dispatch:
+
+permissions: {}
+
+concurrency:
+  group: videobay-upstream-sync
+  cancel-in-progress: false
+
+jobs:
+  videobay-upstream-sync:
+    name: Merge upstream yt-dlp and push if the GUI CI passes
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read  # GITHUB_TOKEN only reads; the push uses the PAT below
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1  # v7.0.1
+        with:
+          ref: master
+          fetch-depth: 0
+          persist-credentials: false
+      - name: Merge upstream/master
+        run: |
+          git config user.name "videobay-upstream-sync"
+          git config user.email "videobay-upstream-sync@users.noreply.github.com"
+          git remote add upstream https://github.com/yt-dlp/yt-dlp
+          git fetch upstream master --tags
+          git merge --no-edit upstream/master
+      - uses: astral-sh/setup-uv@37802adc94f370d6bfd71619e3f0bf239e1f3b78  # v7.6.0
+        with:
+          # WHY: this job pushes to master; it must not trust a cache another run could poison.
+          enable-cache: false
+      - run: make -C videobay_gui ci
+      - name: Push merged master
+        env:
+          # WHY: upstream merges often touch .github/workflows/*, and GITHUB_TOKEN may not push those.
+          # Needs a fine-grained PAT with "Contents" and "Workflows" write on this fork only.
+          # WHY: the PAT lives only in this step, never in .git/config, so the freshly merged
+          # upstream code that `make ci` runs above cannot read it.
+          VIDEOBAY_UPSTREAM_SYNC_TOKEN: ${{ secrets.VIDEOBAY_UPSTREAM_SYNC_TOKEN }}
+        run: >-
+          git push
+          "https://x-access-token:${VIDEOBAY_UPSTREAM_SYNC_TOKEN}@github.com/${GITHUB_REPOSITORY}.git"
+          HEAD:master --follow-tags
