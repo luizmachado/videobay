@@ -89,7 +89,7 @@ def test_output_template_puts_title_and_id_inside_chosen_directory():
     )
 
     assert download_options_build_result.yt_dlp_download_options["outtmpl"] == {
-        "default": f"{SAMPLE_OUTPUT_DIRECTORY}/%(title)s [%(id)s].%(ext)s"
+        "default": f"{SAMPLE_OUTPUT_DIRECTORY}/%(title)s [%(id)s]%(height& {{}}p|)s.%(ext)s"
     }
 
 

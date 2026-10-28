@@ -18,7 +18,11 @@ FFMPEG_REQUIRED_FOR_AUDIO_EXTRACTION_NOTICE = (
 BEST_AUDIO_EXTRACTION_QUALITY = "0"
 # WHY: the id makes names unique when two videos share a title, and keeps re-downloads
 # detectable by yt-dlp's no-overwrite check (EC-07).
-VIDEOBAY_OUTPUT_FILENAME_TEMPLATE = "%(title)s [%(id)s].%(ext)s"
+# WHY: the real height keeps "Melhor" and "Até 144p" of the same video from colliding on one
+# file name (found in the S-017 end-to-end check, where the second was wrongly "Já baixado").
+# PROVENANCE: yt-dlp output-template replacement syntax `%(field&replacement|default)s`;
+# audio-only downloads have no height, so they get no suffix.
+VIDEOBAY_OUTPUT_FILENAME_TEMPLATE = "%(title)s [%(id)s]%(height& {}p|)s.%(ext)s"
 # PROVENANCE: yt-dlp accepts "a/b" here and picks the first container that fits the streams;
 # mp4 plays everywhere, mkv takes codecs mp4 cannot hold (e.g. vp9 + opus on some sites).
 VIDEOBAY_MERGE_OUTPUT_CONTAINERS = "mp4/mkv"
