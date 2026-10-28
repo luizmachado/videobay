@@ -1,4 +1,4 @@
-"""Shared harness for SingleMediaDownloadPresenter tests (split to respect the 300-line limit)."""
+"""Shared harness for VideoDownloadQueuePresenter tests (split to respect the 300-line limit)."""
 
 from dataclasses import dataclass
 
@@ -8,8 +8,8 @@ from tests.fakes.in_memory_videobay_settings_store_fake import InMemoryVideobayS
 from tests.fakes.manually_drained_background_worker_pool_fake import (
     ManuallyDrainedBackgroundWorkerPoolFake,
 )
-from tests.fakes.recording_single_media_download_view_fake import (
-    RecordingSingleMediaDownloadViewFake,
+from tests.fakes.recording_video_download_queue_view_fake import (
+    RecordingVideoDownloadQueueViewFake,
 )
 from tests.fakes.scripted_download_environment_probes_fake import (
     FixedFfmpegAvailabilityProbeFake,
@@ -17,18 +17,26 @@ from tests.fakes.scripted_download_environment_probes_fake import (
 )
 from tests.fakes.scripted_media_download_executor_fake import ScriptedMediaDownloadExecutorFake
 from videobay_gui.core.download_progress_snapshot import DownloadProgressSnapshot
+from videobay_gui.core.media_download_selection import MediaDownloadSelection
 from videobay_gui.core.media_quality_choice import (
     BEST_AVAILABLE_MEDIA_QUALITY_CHOICE,
     MediaQualityChoice,
 )
-from videobay_gui.core.single_media_download_presenter import (
-    SingleMediaDownloadPorts,
-    SingleMediaDownloadPresenter,
+from videobay_gui.core.video_download_queue_presenter import (
+    VideoDownloadQueuePorts,
+    VideoDownloadQueuePresenter,
 )
 
 DEFAULT_DOWNLOAD_DIRECTORY = "/home/user/Downloads"
-SAMPLE_MEDIA_URL = "https://youtu.be/abc"
-DOWNLOAD_ATTEMPTS_AFTER_ONE_RETRY = 2
+
+
+def build_selection(
+    video_identifier: str = "abc",
+    media_quality_choice: MediaQualityChoice = BEST_AVAILABLE_MEDIA_QUALITY_CHOICE,
+) -> MediaDownloadSelection:
+    return MediaDownloadSelection(
+        f"https://youtu.be/{video_identifier}", media_quality_choice, f"Vídeo {video_identifier}"
+    )
 
 
 def build_progress_snapshot(downloaded_byte_count: int) -> DownloadProgressSnapshot:
@@ -36,33 +44,33 @@ def build_progress_snapshot(downloaded_byte_count: int) -> DownloadProgressSnaps
 
 
 @dataclass
-class SingleMediaDownloadPresenterTestHarness:
-    download_presenter: SingleMediaDownloadPresenter
-    download_view_fake: RecordingSingleMediaDownloadViewFake
+class VideoDownloadQueuePresenterTestHarness:
+    queue_presenter: VideoDownloadQueuePresenter
+    queue_view_fake: RecordingVideoDownloadQueueViewFake
     download_executor_fake: ScriptedMediaDownloadExecutorFake
     worker_pool_fake: ManuallyDrainedBackgroundWorkerPoolFake
     settings_store_fake: InMemoryVideobaySettingsStoreFake
     output_directory_probe_fake: ScriptedOutputDirectoryAccessProbeFake
     ffmpeg_probe_fake: FixedFfmpegAvailabilityProbeFake
 
-    def request_download_and_drain(
-        self, media_quality_choice: MediaQualityChoice = BEST_AVAILABLE_MEDIA_QUALITY_CHOICE
-    ) -> None:
-        self.download_presenter.handle_download_requested(SAMPLE_MEDIA_URL, media_quality_choice)
-        self.worker_pool_fake.drain_pending_background_tasks()
+    def request_selection(self, media_download_selection: MediaDownloadSelection | None) -> None:
+        self.queue_presenter.handle_download_requested_for_selection(media_download_selection)
+
+    def executed_media_urls(self) -> list[str]:
+        return [media_url for media_url, _ in self.download_executor_fake.executed_downloads]
 
 
 @pytest.fixture
-def download_harness() -> SingleMediaDownloadPresenterTestHarness:
-    download_view_fake = RecordingSingleMediaDownloadViewFake()
+def queue_harness() -> VideoDownloadQueuePresenterTestHarness:
+    queue_view_fake = RecordingVideoDownloadQueueViewFake()
     download_executor_fake = ScriptedMediaDownloadExecutorFake()
     worker_pool_fake = ManuallyDrainedBackgroundWorkerPoolFake()
     settings_store_fake = InMemoryVideobaySettingsStoreFake(DEFAULT_DOWNLOAD_DIRECTORY)
     output_directory_probe_fake = ScriptedOutputDirectoryAccessProbeFake()
     ffmpeg_probe_fake = FixedFfmpegAvailabilityProbeFake(is_ffmpeg_available=True)
-    download_presenter = SingleMediaDownloadPresenter(
-        download_view_fake,
-        SingleMediaDownloadPorts(
+    queue_presenter = VideoDownloadQueuePresenter(
+        queue_view_fake,
+        VideoDownloadQueuePorts(
             download_executor_fake,
             worker_pool_fake,
             settings_store_fake,
@@ -70,9 +78,9 @@ def download_harness() -> SingleMediaDownloadPresenterTestHarness:
             ffmpeg_probe_fake,
         ),
     )
-    return SingleMediaDownloadPresenterTestHarness(
-        download_presenter,
-        download_view_fake,
+    return VideoDownloadQueuePresenterTestHarness(
+        queue_presenter,
+        queue_view_fake,
         download_executor_fake,
         worker_pool_fake,
         settings_store_fake,

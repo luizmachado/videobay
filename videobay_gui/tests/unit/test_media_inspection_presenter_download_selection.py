@@ -8,6 +8,7 @@ from tests.unit.media_inspection_presenter_harness import (
     build_sample_inspected_media_summary,
     presenter_harness,
 )
+from videobay_gui.core.media_download_selection import MediaDownloadSelection
 from videobay_gui.core.media_quality_choice import (
     BEST_AVAILABLE_MEDIA_QUALITY_CHOICE,
     M4A_AUDIO_ONLY_MEDIA_QUALITY_CHOICE,
@@ -40,9 +41,11 @@ def test_default_selection_is_best_quality_of_inspected_media(
 ):
     inspect_sample_video_with_heights(presenter_harness, (1080, 720))
 
-    assert presenter_harness.media_inspection_presenter.current_download_selection() == (
-        SAMPLE_VIDEO_URL,
-        BEST_AVAILABLE_MEDIA_QUALITY_CHOICE,
+    assert (
+        presenter_harness.media_inspection_presenter.current_download_selection()
+        == MediaDownloadSelection(
+            SAMPLE_VIDEO_URL, BEST_AVAILABLE_MEDIA_QUALITY_CHOICE, f"Título de {SAMPLE_VIDEO_URL}"
+        )
     )
 
 
@@ -67,9 +70,11 @@ def test_selected_menu_index_maps_to_quality_choice(
         selected_choice_index
     )
 
-    assert presenter_harness.media_inspection_presenter.current_download_selection() == (
-        SAMPLE_VIDEO_URL,
-        expected_media_quality_choice,
+    assert (
+        presenter_harness.media_inspection_presenter.current_download_selection()
+        == MediaDownloadSelection(
+            SAMPLE_VIDEO_URL, expected_media_quality_choice, f"Título de {SAMPLE_VIDEO_URL}"
+        )
     )
 
 
@@ -81,7 +86,9 @@ def test_new_inspection_resets_selection_to_best(
 
     inspect_sample_video_with_heights(presenter_harness, (480,))
 
-    assert presenter_harness.media_inspection_presenter.current_download_selection() == (
-        SAMPLE_VIDEO_URL,
-        BEST_AVAILABLE_MEDIA_QUALITY_CHOICE,
+    assert (
+        presenter_harness.media_inspection_presenter.current_download_selection()
+        == MediaDownloadSelection(
+            SAMPLE_VIDEO_URL, BEST_AVAILABLE_MEDIA_QUALITY_CHOICE, f"Título de {SAMPLE_VIDEO_URL}"
+        )
     )

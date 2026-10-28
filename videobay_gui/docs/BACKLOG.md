@@ -41,7 +41,7 @@
 - [x] S-015 Cancelar e tentar de novo
 - [x] S-016 Rejeitar duplicata
   - Edge cases: EC-10
-- [ ] S-017 View da fila
+- [x] S-017 View da fila
 - [ ] S-018 Fechar com jobs ativos
   - Edge cases: EC-16
 

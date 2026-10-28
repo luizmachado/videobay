@@ -2,6 +2,7 @@ from videobay_gui.core.inspected_media_summary import (
     InspectedMediaSummary,
     build_inspected_media_summary_view_model,
 )
+from videobay_gui.core.media_download_selection import MediaDownloadSelection
 from videobay_gui.core.media_inspection_failure import (
     MediaInspectionFailedError,
     MediaInspectionFailureKind,
@@ -9,7 +10,6 @@ from videobay_gui.core.media_inspection_failure import (
     is_media_inspection_failure_retryable,
 )
 from videobay_gui.core.media_quality_choice import (
-    MediaQualityChoice,
     build_media_quality_choices_for_available_heights,
 )
 from videobay_gui.core.media_url_syntax_validation import (
@@ -42,7 +42,7 @@ class MediaInspectionPresenter:
     def handle_media_quality_choice_selected(self, selected_choice_index: int) -> None:
         self.selected_media_quality_choice_index = selected_choice_index
 
-    def current_download_selection(self) -> tuple[str, MediaQualityChoice] | None:
+    def current_download_selection(self) -> MediaDownloadSelection | None:
         inspected_media_summary = self.latest_inspected_media_summary
         if inspected_media_summary is None:
             return None
@@ -53,9 +53,11 @@ class MediaInspectionPresenter:
         # WHY: the menu is rebuilt on every inspection; a stale index falls back to "Melhor".
         if not 0 <= selected_choice_index < len(offered_media_quality_choices):
             selected_choice_index = 0
-        return inspected_media_summary.media_url, offered_media_quality_choices[
-            selected_choice_index
-        ]
+        return MediaDownloadSelection(
+            inspected_media_summary.media_url,
+            offered_media_quality_choices[selected_choice_index],
+            inspected_media_summary.media_title,
+        )
 
     def handle_media_url_text_changed(self, raw_media_url: str) -> None:
         media_url_validation_outcome = validate_media_url_syntax(raw_media_url)

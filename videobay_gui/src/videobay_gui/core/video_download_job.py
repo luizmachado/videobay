@@ -45,6 +45,9 @@ class VideoDownloadJob:
     video_download_job_identifier: int
     video_download_request: VideoDownloadRequest
     video_download_job_status: VideoDownloadJobStatus = VideoDownloadJobStatus.QUEUED
+    # WHY: the inspected title is only for display; it is not part of the request, so it
+    # never affects duplicate detection (EC-10).
+    media_display_title: str = ""
 
     @property
     def is_video_download_job_active(self) -> bool:

@@ -13,7 +13,7 @@
 ## Visão de componentes (ports & adapters)
 
 ```
- [CTk views] ⇄ [MediaInspectionPresenter · SingleMediaDownloadPresenter + view-models]  ← core
+ [CTk views] ⇄ [MediaInspectionPresenter · VideoDownloadQueuePresenter + view-models]  ← core
                        │ usa
         ┌──────────────┼──────────────────────────────┐
   MediaMetadataExtractorPort   MediaDownloadExecutorPort   VideobaySettingsStorePort

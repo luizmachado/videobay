@@ -31,12 +31,14 @@ class VideoDownloadJobQueue:
         self.last_assigned_video_download_job_identifier = 0
 
     def enqueue_video_download_request(
-        self, video_download_request: VideoDownloadRequest
+        self, video_download_request: VideoDownloadRequest, media_display_title: str = ""
     ) -> VideoDownloadJob:
         self.reject_duplicate_of_active_job(video_download_request)
         self.last_assigned_video_download_job_identifier += 1
         new_video_download_job = VideoDownloadJob(
-            self.last_assigned_video_download_job_identifier, video_download_request
+            self.last_assigned_video_download_job_identifier,
+            video_download_request,
+            media_display_title=media_display_title,
         )
         self.store_video_download_job(new_video_download_job)
         return new_video_download_job

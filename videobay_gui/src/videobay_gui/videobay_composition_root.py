@@ -24,9 +24,9 @@ from videobay_gui.adapters.urllib_thumbnail_image_fetcher_adapter import (
 from videobay_gui.adapters.yt_dlp_download_executor_adapter import YtDlpDownloadExecutorAdapter
 from videobay_gui.adapters.yt_dlp_metadata_extractor_adapter import YtDlpMetadataExtractorAdapter
 from videobay_gui.core.media_inspection_presenter import MediaInspectionPresenter
-from videobay_gui.core.single_media_download_presenter import (
-    SingleMediaDownloadPorts,
-    SingleMediaDownloadPresenter,
+from videobay_gui.core.video_download_queue_presenter import (
+    VideoDownloadQueuePorts,
+    VideoDownloadQueuePresenter,
 )
 from videobay_gui.core.videobay_application_identity import build_videobay_main_window_title
 from videobay_gui.views.videobay_main_window_view import VideobayMainWindowView
@@ -60,10 +60,10 @@ def build_videobay_gui_application() -> VideobayMainWindowView:
         media_inspection_presenter.handle_inspect_media_url_requested,
         media_inspection_presenter.handle_media_quality_choice_selected,
     )
-    single_media_download_panel_view = videobay_main_window_view.single_media_download_panel_view
-    single_media_download_presenter = SingleMediaDownloadPresenter(
-        single_media_download_panel_view,
-        SingleMediaDownloadPorts(
+    video_download_queue_panel_view = videobay_main_window_view.video_download_queue_panel_view
+    video_download_queue_presenter = VideoDownloadQueuePresenter(
+        video_download_queue_panel_view,
+        VideoDownloadQueuePorts(
             YtDlpDownloadExecutorAdapter(deno_executable_path=deno_executable_path),
             background_worker_pool,
             JsonFileVideobaySettingsStoreAdapter(
@@ -74,15 +74,15 @@ def build_videobay_gui_application() -> VideobayMainWindowView:
             ShutilWhichFfmpegProbeAdapter(shutil.which),
         ),
     )
-    single_media_download_panel_view.bind_single_media_download_presenter_callbacks(
-        single_media_download_presenter.handle_output_directory_chosen,
-        lambda: single_media_download_presenter.handle_download_requested_for_selection(
+    video_download_queue_panel_view.bind_video_download_queue_presenter_callbacks(
+        video_download_queue_presenter.handle_output_directory_chosen,
+        lambda: video_download_queue_presenter.handle_download_requested_for_selection(
             media_inspection_presenter.current_download_selection()
         ),
-        single_media_download_presenter.handle_download_cancel_requested,
-        single_media_download_presenter.handle_download_retry_requested,
+        video_download_queue_presenter.handle_video_download_job_cancel_requested,
+        video_download_queue_presenter.handle_video_download_job_retry_requested,
     )
-    single_media_download_presenter.present_initial_download_state()
+    video_download_queue_presenter.present_initial_download_state()
     videobay_main_window_view.schedule_recurring_ui_callback(
         UI_CALLBACK_DRAIN_INTERVAL_MILLISECONDS,
         background_worker_pool.drain_completed_callbacks_on_ui_thread,
