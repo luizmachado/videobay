@@ -1,0 +1,26 @@
+# VideoBay GUI CI. Thin by design: every step is a `make` target you can run locally.
+name: videobay-gui-ci
+on:
+  push:
+    paths: ["videobay_gui/**", ".github/workflows/videobay-*.yml"]
+  pull_request:
+    paths: ["videobay_gui/**", ".github/workflows/videobay-*.yml"]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  videobay-gui-ci:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: astral-sh/setup-uv@v6
+      - run: make -C videobay_gui ci
+
+  videobay-gui-ui-smoke:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      # podman is preinstalled on ubuntu-latest runners
+      - run: make -C videobay_gui test-ui

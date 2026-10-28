@@ -1,0 +1,21 @@
+# Publishes the Linux onefile binary for tags gui-vX.Y.Z (ADR-0005). Releases are immutable rollback points.
+name: videobay-gui-release
+on:
+  push:
+    tags: ["gui-v*"]
+
+permissions:
+  contents: write
+
+jobs:
+  videobay-gui-release:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: astral-sh/setup-uv@v6
+      - run: make -C videobay_gui ci
+      - run: make -C videobay_gui binary
+      - run: cp videobay_gui/dist/*/videobay-gui videobay-gui-linux-x86_64
+      - uses: softprops/action-gh-release@v2
+        with:
+          files: videobay-gui-linux-x86_64

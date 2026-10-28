@@ -1,0 +1,75 @@
+[build-system]
+requires = ["hatchling>=1.27.0"]
+build-backend = "hatchling.build"
+
+[project]
+name = "videobay-gui"
+dynamic = ["version"]
+description = "Lightweight CustomTkinter GUI for yt-dlp"
+requires-python = ">=3.12"
+dependencies = [
+    "yt-dlp",
+    "customtkinter>=5.2.2",
+]
+
+[project.scripts]
+videobay-gui = "videobay_gui.videobay_composition_root:launch_videobay_gui_application"
+
+[tool.hatch.version]
+path = "src/videobay_gui/__init__.py"
+
+[tool.hatch.build.targets.wheel]
+packages = ["src/videobay_gui"]
+
+[tool.uv.sources]
+# WHY: the GUI must always run against this fork's synced yt-dlp tree (ADR-0001), never a PyPI copy.
+yt-dlp = { path = "..", editable = true }
+
+[dependency-groups]
+dev = [
+    "pytest>=8.3",
+    "pytest-cov>=6.0",
+    "ruff>=0.11",
+    "pyright>=1.1.400",
+    "pyinstaller>=6.11",
+]
+
+[tool.ruff]
+line-length = 100
+target-version = "py312"
+src = ["src", "tests"]
+
+[tool.ruff.lint]
+select = ["E", "F", "I", "B", "UP", "SIM", "C90", "PLR", "RET", "N"]
+
+[tool.ruff.lint.mccabe]
+max-complexity = 8
+
+[tool.ruff.lint.pylint]
+max-args = 5
+max-branches = 8
+max-statements = 30
+max-nested-blocks = 2
+
+[tool.pyright]
+include = ["src", "tests"]
+pythonVersion = "3.12"
+typeCheckingMode = "strict"
+# PROVENANCE: customtkinter and yt_dlp ship without type stubs; strictness stays on for our own code.
+reportMissingTypeStubs = false
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+addopts = "--strict-markers"
+markers = [
+    "ui: needs a display (run via `make test-ui` under xvfb)",
+    "integration: talks to the real network / real yt-dlp extractors",
+]
+
+[tool.coverage.run]
+branch = true
+source = ["src/videobay_gui/core"]
+
+[tool.coverage.report]
+fail_under = 100
+show_missing = true

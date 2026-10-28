@@ -1,7 +1,7 @@
 # Backlog
 
 ## F-00 Walking skeleton
-- [ ] S-000 Tooling, CI, Containerfile, binário "hello", install/rollback
+- [x] S-000 Tooling, CI, Containerfile, binário "hello", install/rollback
 
 ## F-01 Inspeção de URL
 - [ ] S-001 Validação de sintaxe da URL
