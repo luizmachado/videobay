@@ -6,6 +6,8 @@ class RecordingVideoDownloadQueueViewFake:
         self.shown_output_directories: list[str] = []
         self.shown_download_notices: list[str | None] = []
         self.shown_job_rows: list[VideoDownloadJobRowViewModel] = []
+        self.scripted_close_confirmation_answer = True
+        self.asked_close_confirmation_counts: list[int] = []
 
     def show_output_directory(self, output_directory: str) -> None:
         self.shown_output_directories.append(output_directory)
@@ -17,6 +19,10 @@ class RecordingVideoDownloadQueueViewFake:
         self, video_download_job_row_view_model: VideoDownloadJobRowViewModel
     ) -> None:
         self.shown_job_rows.append(video_download_job_row_view_model)
+
+    def confirm_closing_with_active_downloads(self, active_download_count: int) -> bool:
+        self.asked_close_confirmation_counts.append(active_download_count)
+        return self.scripted_close_confirmation_answer
 
     def latest_row_of_job(self, video_download_job_identifier: int) -> VideoDownloadJobRowViewModel:
         return [

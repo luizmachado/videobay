@@ -89,7 +89,8 @@ def build_videobay_gui_application() -> VideobayMainWindowView:
     )
     # WHY: a pending yt-dlp call must not keep the process alive after the window closes.
     videobay_main_window_view.bind_main_window_close_callback(
-        lambda: background_worker_pool.shutdown_background_workers(wait_for_running_tasks=False)
+        video_download_queue_presenter.handle_main_window_close_requested,
+        lambda: background_worker_pool.shutdown_background_workers(wait_for_running_tasks=False),
     )
     return videobay_main_window_view
 

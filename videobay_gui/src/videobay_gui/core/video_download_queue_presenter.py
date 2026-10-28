@@ -267,6 +267,22 @@ class VideoDownloadQueuePresenter:
         self.show_job_row(video_download_job_identifier)
         self.start_jobs_with_free_slots()
 
+    def handle_main_window_close_requested(self) -> bool:
+        active_job_identifiers = [
+            video_download_job.video_download_job_identifier
+            for video_download_job in self.video_download_job_queue.list_video_download_jobs()
+            if video_download_job.is_video_download_job_active
+        ]
+        if not active_job_identifiers:
+            return True
+        if not self.queue_view.confirm_closing_with_active_downloads(len(active_job_identifiers)):
+            return False
+        # WHY: EC-16. Cancelling (instead of just exiting) lets each running executor remove its
+        # .part files; the worker threads then finish before the interpreter exits.
+        for active_job_identifier in active_job_identifiers:
+            self.handle_video_download_job_cancel_requested(active_job_identifier)
+        return True
+
     def show_job_row(
         self, job_identifier: int, latest_progress_snapshot: DownloadProgressSnapshot | None = None
     ) -> None:

@@ -3,7 +3,7 @@
 # VideoDownloadQueuePresenter, which is strictly typed and fully unit tested.
 from collections.abc import Callable
 from dataclasses import dataclass
-from tkinter import filedialog
+from tkinter import filedialog, messagebox
 
 import customtkinter
 
@@ -89,6 +89,15 @@ class VideoDownloadQueuePanelView(customtkinter.CTkFrame):
 
     def show_download_notice(self, download_notice_message: str | None) -> None:
         self.download_notice_label.configure(text=download_notice_message or "")
+
+    def confirm_closing_with_active_downloads(self, active_download_count: int) -> bool:
+        return messagebox.askyesno(
+            "Downloads em andamento",
+            f"Há {active_download_count} download(s) em andamento ou na fila.\n"
+            "Fechar agora cancela todos. Deseja fechar?",
+            parent=self,
+            icon=messagebox.WARNING,
+        )
 
     def show_video_download_job_row(
         self, video_download_job_row_view_model: VideoDownloadJobRowViewModel

@@ -13,3 +13,7 @@ class VideoDownloadQueueViewPort(Protocol):
     ) -> None:
         """Adds the row the first time an identifier is seen and updates it afterwards."""
         ...
+
+    def confirm_closing_with_active_downloads(self, active_download_count: int) -> bool:
+        """Blocking yes/no question; True means close and cancel the downloads (EC-16)."""
+        ...

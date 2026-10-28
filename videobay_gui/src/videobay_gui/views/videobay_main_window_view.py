@@ -35,8 +35,14 @@ class VideobayMainWindowView(customtkinter.CTk):
 
         self.after(callback_interval_milliseconds, run_and_reschedule_recurring_ui_callback)
 
-    def bind_main_window_close_callback(self, on_main_window_closing: Callable[[], None]) -> None:
+    def bind_main_window_close_callback(
+        self,
+        should_main_window_close: Callable[[], bool],
+        on_main_window_closing: Callable[[], None],
+    ) -> None:
         def close_main_window() -> None:
+            if not should_main_window_close():
+                return
             on_main_window_closing()
             self.destroy()
 

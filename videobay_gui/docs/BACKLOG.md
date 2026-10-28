@@ -42,7 +42,7 @@
 - [x] S-016 Rejeitar duplicata
   - Edge cases: EC-10
 - [x] S-017 View da fila
-- [ ] S-018 Fechar com jobs ativos
+- [x] S-018 Fechar com jobs ativos
   - Edge cases: EC-16
 
 ## F-05 Playlists e legendas
