@@ -53,5 +53,5 @@
 - [x] S-021 Legendas
   - Edge cases: EC-13
 - [x] S-022 View de seleção de playlist e legendas
-- [ ] S-023 Mensagem de extractor quebrado
+- [x] S-023 Mensagem de extractor quebrado
   - Edge cases: EC-18

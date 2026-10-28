@@ -8,6 +8,7 @@ class MediaInspectionFailureKind(StrEnum):
     AGE_RESTRICTED = "age_restricted"
     NETWORK_UNREACHABLE = "network_unreachable"
     LIVE_BROADCAST_NOT_SUPPORTED = "live_broadcast_not_supported"
+    BROKEN_SITE_EXTRACTOR = "broken_site_extractor"
     UNKNOWN_EXTRACTION_FAILURE = "unknown_extraction_failure"
 
 
@@ -33,6 +34,12 @@ MEDIA_INSPECTION_FAILURE_MESSAGES_FOR_USER = {
     ),
     MediaInspectionFailureKind.LIVE_BROADCAST_NOT_SUPPORTED: (
         "Transmissões ao vivo não são suportadas nesta versão."
+    ),
+    # PROVENANCE: EC-18. yt-dlp marks these as bugs ("please report this issue"); fixes land
+    # upstream, so the action is syncing the fork, not retrying.
+    MediaInspectionFailureKind.BROKEN_SITE_EXTRACTOR: (
+        "O site mudou e esta versão do yt-dlp ainda não sabe lê-lo. Sincronize o fork com o "
+        "yt-dlp original (git merge upstream/master) para receber a correção."
     ),
     MediaInspectionFailureKind.UNKNOWN_EXTRACTION_FAILURE: (
         "Não foi possível ler este endereço. Tente de novo."

@@ -3,7 +3,7 @@ from contextlib import AbstractContextManager
 from typing import Any, Protocol, cast
 
 import yt_dlp
-from yt_dlp.utils import DownloadError
+from yt_dlp.utils import DownloadError, ExtractorError
 
 # WHY: 429 (rate limit) and 5xx are transient, so the user gets "tentar de novo" for them.
 TRANSIENT_HTTP_STATUS_CODES = frozenset({408, 429, 500, 502, 503, 504})
@@ -58,3 +58,11 @@ def unwrap_original_yt_dlp_error_cause(yt_dlp_error: Exception) -> Exception:
         return yt_dlp_error
     original_yt_dlp_error = yt_dlp_error.exc_info[1]
     return original_yt_dlp_error if isinstance(original_yt_dlp_error, Exception) else yt_dlp_error
+
+
+def is_broken_site_extractor_error(original_yt_dlp_error: BaseException) -> bool:
+    # PROVENANCE: EC-18. ExtractorError(expected=False) is yt-dlp's "this is a bug" marker; it
+    # also appends "please report this issue" to the message (utils/_utils.py, ExtractorError).
+    if isinstance(original_yt_dlp_error, ExtractorError):
+        return not original_yt_dlp_error.expected
+    return "please report this issue" in str(original_yt_dlp_error).lower()

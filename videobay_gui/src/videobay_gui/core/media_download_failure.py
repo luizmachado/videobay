@@ -7,6 +7,7 @@ class MediaDownloadFailureKind(StrEnum):
     OUTPUT_DISK_FULL = "output_disk_full"
     OUTPUT_DIRECTORY_NOT_WRITABLE = "output_directory_not_writable"
     POSTPROCESSING_FAILED = "postprocessing_failed"
+    BROKEN_SITE_EXTRACTOR = "broken_site_extractor"
     UNKNOWN_DOWNLOAD_FAILURE = "unknown_download_failure"
 
 
@@ -37,6 +38,11 @@ MEDIA_DOWNLOAD_FAILURE_MESSAGES_FOR_USER = {
     ),
     MediaDownloadFailureKind.POSTPROCESSING_FAILED: (
         "O download terminou, mas o ffmpeg falhou ao juntar ou converter o arquivo."
+    ),
+    # PROVENANCE: EC-18, same meaning as MediaInspectionFailureKind.BROKEN_SITE_EXTRACTOR.
+    MediaDownloadFailureKind.BROKEN_SITE_EXTRACTOR: (
+        "O site mudou e esta versão do yt-dlp ainda não sabe lê-lo. Sincronize o fork com o "
+        "yt-dlp original (git merge upstream/master) para receber a correção."
     ),
     MediaDownloadFailureKind.UNKNOWN_DOWNLOAD_FAILURE: "O download falhou. Tente de novo.",
 }

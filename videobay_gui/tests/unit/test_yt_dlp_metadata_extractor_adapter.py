@@ -62,7 +62,7 @@ def build_yt_dlp_http_error(http_status_code: int) -> HTTPError:
         ),
         (
             ExtractorError("Unable to extract title"),
-            MediaInspectionFailureKind.UNKNOWN_EXTRACTION_FAILURE,
+            MediaInspectionFailureKind.BROKEN_SITE_EXTRACTOR,
         ),
     ],
 )

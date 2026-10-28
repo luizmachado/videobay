@@ -5,7 +5,7 @@ from collections.abc import Callable, Iterator
 from typing import Any
 
 from yt_dlp.networking.exceptions import HTTPError, TransportError
-from yt_dlp.utils import DownloadCancelled, PostProcessingError, YoutubeDLError
+from yt_dlp.utils import DownloadCancelled, ExtractorError, PostProcessingError, YoutubeDLError
 
 from videobay_gui.adapters.yt_dlp_shared_client_configuration import (
     TRANSIENT_HTTP_STATUS_CODES,
@@ -13,6 +13,7 @@ from videobay_gui.adapters.yt_dlp_shared_client_configuration import (
     YtDlpInfoExtractingClientFactory,
     build_real_yt_dlp_info_extracting_client,
     build_yt_dlp_javascript_runtime_params,
+    is_broken_site_extractor_error,
     unwrap_original_yt_dlp_error_cause,
 )
 from videobay_gui.core.download_progress_snapshot import DownloadProgressSnapshot
@@ -183,12 +184,20 @@ def classify_yt_dlp_download_error(yt_dlp_error: BaseException) -> MediaDownload
 def classify_single_download_error(chained_error: BaseException) -> MediaDownloadFailureKind | None:
     if isinstance(chained_error, PostProcessingError):
         return MediaDownloadFailureKind.POSTPROCESSING_FAILED
-    if isinstance(chained_error, HTTPError):
-        if chained_error.status in TRANSIENT_HTTP_STATUS_CODES:
-            return MediaDownloadFailureKind.NETWORK_UNREACHABLE
-        return MediaDownloadFailureKind.MEDIA_UNAVAILABLE
-    if isinstance(chained_error, TransportError):
-        return MediaDownloadFailureKind.NETWORK_UNREACHABLE
+    if isinstance(chained_error, HTTPError | TransportError):
+        return classify_download_network_error(chained_error)
+    if isinstance(chained_error, ExtractorError) and is_broken_site_extractor_error(chained_error):
+        return MediaDownloadFailureKind.BROKEN_SITE_EXTRACTOR
     if isinstance(chained_error, OSError) and chained_error.errno is not None:
         return DOWNLOAD_FAILURE_KINDS_BY_OS_ERRNO.get(chained_error.errno)
     return None
+
+
+def classify_download_network_error(
+    network_error: HTTPError | TransportError,
+) -> MediaDownloadFailureKind:
+    if isinstance(network_error, HTTPError) and (
+        network_error.status not in TRANSIENT_HTTP_STATUS_CODES
+    ):
+        return MediaDownloadFailureKind.MEDIA_UNAVAILABLE
+    return MediaDownloadFailureKind.NETWORK_UNREACHABLE

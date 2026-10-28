@@ -9,6 +9,7 @@ from videobay_gui.adapters.yt_dlp_shared_client_configuration import (
     YtDlpInfoExtractingClientFactory,
     build_real_yt_dlp_info_extracting_client,
     build_yt_dlp_javascript_runtime_params,
+    is_broken_site_extractor_error,
     unwrap_original_yt_dlp_error_cause,
 )
 from videobay_gui.core.inspected_media_summary import InspectedMediaSummary, InspectedPlaylistEntry
@@ -181,7 +182,19 @@ def classify_yt_dlp_inspection_error(yt_dlp_error: Exception) -> MediaInspection
         return classify_yt_dlp_http_error_status(original_yt_dlp_error.status)
     if isinstance(original_yt_dlp_error, TransportError):
         return MediaInspectionFailureKind.NETWORK_UNREACHABLE
-    return classify_yt_dlp_error_message(str(yt_dlp_error).lower())
+    return classify_yt_dlp_error_beyond_exception_types(yt_dlp_error, original_yt_dlp_error)
+
+
+def classify_yt_dlp_error_beyond_exception_types(
+    yt_dlp_error: Exception, original_yt_dlp_error: Exception
+) -> MediaInspectionFailureKind:
+    message_based_failure_kind = classify_yt_dlp_error_message(str(yt_dlp_error).lower())
+    # WHY: known messages (age, private…) win even if yt-dlp did not mark them as expected.
+    if message_based_failure_kind is not MediaInspectionFailureKind.UNKNOWN_EXTRACTION_FAILURE:
+        return message_based_failure_kind
+    if is_broken_site_extractor_error(original_yt_dlp_error):
+        return MediaInspectionFailureKind.BROKEN_SITE_EXTRACTOR
+    return message_based_failure_kind
 
 
 def classify_yt_dlp_http_error_status(http_status_code: int) -> MediaInspectionFailureKind:
