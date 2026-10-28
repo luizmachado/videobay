@@ -31,8 +31,8 @@
 - [x] S-010 View de progresso
 
 ## F-03 Áudio
-- [ ] S-011 Pós-processador MP3/M4A
-- [ ] S-012 Bloqueio sem ffmpeg
+- [x] S-011 Pós-processador MP3/M4A
+- [x] S-012 Bloqueio sem ffmpeg
   - Edge cases: EC-05
 
 ## F-04 Fila

@@ -1,14 +1,26 @@
 from dataclasses import dataclass
+from enum import StrEnum
+
+
+class AudioOutputCodec(StrEnum):
+    MP3 = "mp3"
+    M4A = "m4a"
 
 
 @dataclass(frozen=True)
 class MediaQualityChoice:
     maximum_video_height: int | None = None
-    is_audio_only: bool = False
+    # WHY: audio-only is derived from the codec so the two can never contradict each other.
+    audio_output_codec: AudioOutputCodec | None = None
+
+    @property
+    def is_audio_only(self) -> bool:
+        return self.audio_output_codec is not None
 
 
 BEST_AVAILABLE_MEDIA_QUALITY_CHOICE = MediaQualityChoice()
-AUDIO_ONLY_MEDIA_QUALITY_CHOICE = MediaQualityChoice(is_audio_only=True)
+MP3_AUDIO_ONLY_MEDIA_QUALITY_CHOICE = MediaQualityChoice(audio_output_codec=AudioOutputCodec.MP3)
+M4A_AUDIO_ONLY_MEDIA_QUALITY_CHOICE = MediaQualityChoice(audio_output_codec=AudioOutputCodec.M4A)
 
 STANDARD_VIDEO_HEIGHT_TIERS = (4320, 2160, 1440, 1080, 720, 480, 360, 240, 144)
 # WHY: encoders often crop a few lines (1080 → 1072), so heights up to 5% below a tier still
@@ -59,15 +71,16 @@ def build_media_quality_choices_for_available_heights(
             MediaQualityChoice(maximum_video_height=video_height_tier)
             for video_height_tier in lower_existing_standard_tiers
         ),
-        AUDIO_ONLY_MEDIA_QUALITY_CHOICE,
+        MP3_AUDIO_ONLY_MEDIA_QUALITY_CHOICE,
+        M4A_AUDIO_ONLY_MEDIA_QUALITY_CHOICE,
     )
 
 
 def describe_media_quality_choice_for_user(
     media_quality_choice: MediaQualityChoice, highest_available_tier: int | None
 ) -> str:
-    if media_quality_choice.is_audio_only:
-        return "Só áudio"
+    if media_quality_choice.audio_output_codec is not None:
+        return f"Só áudio ({media_quality_choice.audio_output_codec.upper()})"
     if media_quality_choice.maximum_video_height is not None:
         return f"Até {media_quality_choice.maximum_video_height}p"
     if highest_available_tier is None:

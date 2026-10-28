@@ -1,8 +1,9 @@
 import pytest
 
 from videobay_gui.core.media_quality_choice import (
-    AUDIO_ONLY_MEDIA_QUALITY_CHOICE,
     BEST_AVAILABLE_MEDIA_QUALITY_CHOICE,
+    M4A_AUDIO_ONLY_MEDIA_QUALITY_CHOICE,
+    MP3_AUDIO_ONLY_MEDIA_QUALITY_CHOICE,
     MediaQualityChoice,
     build_media_quality_choices_for_available_heights,
     describe_media_quality_choice_for_user,
@@ -37,7 +38,8 @@ def test_offers_best_then_lower_existing_tiers_then_audio_only():
         MediaQualityChoice(maximum_video_height=720),
         MediaQualityChoice(maximum_video_height=480),
         MediaQualityChoice(maximum_video_height=360),
-        AUDIO_ONLY_MEDIA_QUALITY_CHOICE,
+        MP3_AUDIO_ONLY_MEDIA_QUALITY_CHOICE,
+        M4A_AUDIO_ONLY_MEDIA_QUALITY_CHOICE,
     )
 
 
@@ -55,7 +57,8 @@ def test_never_offers_resolutions_that_do_not_exist():
 def test_audio_only_sources_still_offer_best_and_audio(available_video_heights: tuple[int, ...]):
     assert build_media_quality_choices_for_available_heights(available_video_heights) == (
         BEST_AVAILABLE_MEDIA_QUALITY_CHOICE,
-        AUDIO_ONLY_MEDIA_QUALITY_CHOICE,
+        MP3_AUDIO_ONLY_MEDIA_QUALITY_CHOICE,
+        M4A_AUDIO_ONLY_MEDIA_QUALITY_CHOICE,
     )
 
 
@@ -65,7 +68,8 @@ def test_audio_only_sources_still_offer_best_and_audio(available_video_heights: 
         (BEST_AVAILABLE_MEDIA_QUALITY_CHOICE, 1080, "Melhor (1080p)"),
         (BEST_AVAILABLE_MEDIA_QUALITY_CHOICE, None, "Melhor qualidade"),
         (MediaQualityChoice(maximum_video_height=720), 1080, "Até 720p"),
-        (AUDIO_ONLY_MEDIA_QUALITY_CHOICE, 1080, "Só áudio"),
+        (MP3_AUDIO_ONLY_MEDIA_QUALITY_CHOICE, 1080, "Só áudio (MP3)"),
+        (M4A_AUDIO_ONLY_MEDIA_QUALITY_CHOICE, None, "Só áudio (M4A)"),
     ],
 )
 def test_describes_quality_choices_in_portuguese(

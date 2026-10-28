@@ -9,9 +9,9 @@
 | Apresentador de inspeção | Liga a barra de URL ao extractor e à view | `MediaInspectionPresenter` |
 | Miniatura | Imagem de capa da mídia; falha nunca é erro (EC-14) | `ThumbnailImageFetcherPort`, `ThumbnailImageFetchFailedError` |
 | Apresentador de download | Pasta, ffmpeg, progresso coalescido, cancelar e tentar de novo de um download | `SingleMediaDownloadPresenter`, `SingleMediaDownloadPorts` |
-| Escolha de qualidade | Altura máxima (None = melhor) ou só áudio | `MediaQualityChoice` |
+| Escolha de qualidade | Altura máxima (None = melhor) ou só áudio com codec | `MediaQualityChoice` |
 | Faixa padrão de altura | 4320…144 px; alturas cortadas caem na faixa abaixo | `STANDARD_VIDEO_HEIGHT_TIERS` |
-| Codec de áudio de saída | Formato da extração de áudio | `AudioOutputCodec` |
+| Codec de áudio de saída | Formato da extração de áudio (MP3 ou M4A); preenchido = escolha "só áudio" | `AudioOutputCodec` |
 | Pedido de download | Tudo que o usuário escolheu para um download | `VideoDownloadRequest` |
 | Job de download | Pedido na fila, com estado | `VideoDownloadJob`, `VideoDownloadJobStatus` |
 | Fila de downloads | Jobs ordenados com limite de concorrência | `VideoDownloadJobQueue` |

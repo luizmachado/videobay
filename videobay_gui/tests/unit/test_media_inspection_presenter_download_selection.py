@@ -9,8 +9,9 @@ from tests.unit.media_inspection_presenter_harness import (
     presenter_harness,
 )
 from videobay_gui.core.media_quality_choice import (
-    AUDIO_ONLY_MEDIA_QUALITY_CHOICE,
     BEST_AVAILABLE_MEDIA_QUALITY_CHOICE,
+    M4A_AUDIO_ONLY_MEDIA_QUALITY_CHOICE,
+    MP3_AUDIO_ONLY_MEDIA_QUALITY_CHOICE,
     MediaQualityChoice,
 )
 
@@ -49,7 +50,8 @@ def test_default_selection_is_best_quality_of_inspected_media(
     ("selected_choice_index", "expected_media_quality_choice"),
     [
         (1, MediaQualityChoice(maximum_video_height=720)),
-        (2, AUDIO_ONLY_MEDIA_QUALITY_CHOICE),
+        (2, MP3_AUDIO_ONLY_MEDIA_QUALITY_CHOICE),
+        (3, M4A_AUDIO_ONLY_MEDIA_QUALITY_CHOICE),
         (99, BEST_AVAILABLE_MEDIA_QUALITY_CHOICE),
         (-1, BEST_AVAILABLE_MEDIA_QUALITY_CHOICE),
     ],

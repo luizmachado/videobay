@@ -6,8 +6,9 @@ from videobay_gui.core.inspected_media_summary import (
     format_media_duration_for_display,
 )
 from videobay_gui.core.media_quality_choice import (
-    AUDIO_ONLY_MEDIA_QUALITY_CHOICE,
     BEST_AVAILABLE_MEDIA_QUALITY_CHOICE,
+    M4A_AUDIO_ONLY_MEDIA_QUALITY_CHOICE,
+    MP3_AUDIO_ONLY_MEDIA_QUALITY_CHOICE,
     MediaQualityChoice,
 )
 
@@ -84,11 +85,13 @@ def test_view_model_offers_quality_choices_with_matching_labels():
         BEST_AVAILABLE_MEDIA_QUALITY_CHOICE,
         MediaQualityChoice(maximum_video_height=720),
         MediaQualityChoice(maximum_video_height=360),
-        AUDIO_ONLY_MEDIA_QUALITY_CHOICE,
+        MP3_AUDIO_ONLY_MEDIA_QUALITY_CHOICE,
+        M4A_AUDIO_ONLY_MEDIA_QUALITY_CHOICE,
     )
     assert inspected_media_view_model.media_quality_choice_labels == (
         "Melhor (1080p)",
         "Até 720p",
         "Até 360p",
-        "Só áudio",
+        "Só áudio (MP3)",
+        "Só áudio (M4A)",
     )

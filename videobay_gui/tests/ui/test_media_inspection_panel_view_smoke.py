@@ -118,7 +118,8 @@ def test_inspected_video_fills_card_quality_menu_and_thumbnail(
     assert panel_view.media_quality_option_menu.cget("values") == [
         "Melhor (240p)",
         "Até 144p",
-        "Só áudio",
+        "Só áudio (MP3)",
+        "Só áudio (M4A)",
     ]
     assert panel_view.media_thumbnail_ctk_image is not None
     assert panel_view.media_thumbnail_label.cget("text") == ""

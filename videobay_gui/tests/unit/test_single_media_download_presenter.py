@@ -15,6 +15,7 @@ from videobay_gui.core.media_download_failure import (
 from videobay_gui.core.media_download_outcome import MediaDownloadOutcome
 from videobay_gui.core.media_quality_choice import (
     BEST_AVAILABLE_MEDIA_QUALITY_CHOICE,
+    MP3_AUDIO_ONLY_MEDIA_QUALITY_CHOICE,
     MediaQualityChoice,
 )
 from videobay_gui.core.single_media_download_presenter import (
@@ -22,6 +23,7 @@ from videobay_gui.core.single_media_download_presenter import (
 )
 from videobay_gui.core.yt_dlp_download_options_builder import (
     FFMPEG_MISSING_SINGLE_FILE_FALLBACK_NOTICE,
+    FFMPEG_REQUIRED_FOR_AUDIO_EXTRACTION_NOTICE,
 )
 
 __all__ = ["download_harness"]
@@ -226,3 +228,19 @@ def test_download_for_selection_starts_download_of_selected_target(
     )
 
     assert len(download_harness.worker_pool_fake.pending_background_tasks) == 1
+
+
+def test_ec05_audio_download_without_ffmpeg_is_blocked_before_starting(
+    download_harness: SingleMediaDownloadPresenterTestHarness,
+):
+    download_harness.ffmpeg_probe_fake.is_ffmpeg_available = False
+
+    download_harness.request_download_and_drain(MP3_AUDIO_ONLY_MEDIA_QUALITY_CHOICE)
+
+    assert download_harness.download_executor_fake.executed_downloads == []
+    assert "show_download_in_progress" not in (
+        download_harness.download_view_fake.recorded_view_call_names()
+    )
+    assert download_harness.download_view_fake.recorded_arguments_of("show_download_notice") == [
+        FFMPEG_REQUIRED_FOR_AUDIO_EXTRACTION_NOTICE
+    ]

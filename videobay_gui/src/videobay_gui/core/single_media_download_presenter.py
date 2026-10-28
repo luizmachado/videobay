@@ -16,7 +16,10 @@ from videobay_gui.core.media_download_outcome import MediaDownloadOutcome
 from videobay_gui.core.media_quality_choice import MediaQualityChoice
 from videobay_gui.core.video_download_request import VideoDownloadRequest
 from videobay_gui.core.videobay_user_settings import describe_output_directory_problem_for_user
-from videobay_gui.core.yt_dlp_download_options_builder import build_yt_dlp_download_options
+from videobay_gui.core.yt_dlp_download_options_builder import (
+    build_yt_dlp_download_options,
+    find_download_blocking_problem,
+)
 from videobay_gui.ports.background_worker_pool_port import BackgroundWorkerPoolPort
 from videobay_gui.ports.ffmpeg_availability_probe_port import FfmpegAvailabilityProbePort
 from videobay_gui.ports.media_download_executor_port import MediaDownloadExecutorPort
@@ -98,9 +101,18 @@ class SingleMediaDownloadPresenter:
         # WHY: the folder may have been unmounted or deleted since it was chosen (EC-06).
         if not self.show_output_directory_problem_if_any(output_directory):
             return
+        video_download_request = VideoDownloadRequest(
+            media_url, media_quality_choice, output_directory
+        )
+        is_ffmpeg_available = self.ffmpeg_availability_probe.is_ffmpeg_executable_available()
+        download_blocking_problem = find_download_blocking_problem(
+            video_download_request, is_ffmpeg_available
+        )
+        if download_blocking_problem is not None:
+            self.download_view.show_download_notice(download_blocking_problem)
+            return
         download_options_build_result = build_yt_dlp_download_options(
-            VideoDownloadRequest(media_url, media_quality_choice, output_directory),
-            self.ffmpeg_availability_probe.is_ffmpeg_executable_available(),
+            video_download_request, is_ffmpeg_available
         )
         self.last_requested_download_target = (media_url, media_quality_choice)
         self.is_download_active = True
