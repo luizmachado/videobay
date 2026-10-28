@@ -14,3 +14,7 @@ class BackgroundWorkerPoolPort(Protocol):
         PROVENANCE: ADR-0004 (Tkinter is not thread-safe).
         """
         ...
+
+    def post_callback_to_ui_thread(self, ui_thread_callback: Callable[[], None]) -> None:
+        """Callable from any thread; ui_thread_callback runs later on the UI thread, in order."""
+        ...

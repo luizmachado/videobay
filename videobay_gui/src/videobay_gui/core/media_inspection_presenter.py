@@ -8,6 +8,10 @@ from videobay_gui.core.media_inspection_failure import (
     describe_media_inspection_failure_for_user,
     is_media_inspection_failure_retryable,
 )
+from videobay_gui.core.media_quality_choice import (
+    MediaQualityChoice,
+    build_media_quality_choices_for_available_heights,
+)
 from videobay_gui.core.media_url_syntax_validation import (
     MediaUrlRejectionReason,
     describe_media_url_rejection_reason_for_user,
@@ -33,6 +37,25 @@ class MediaInspectionPresenter:
         self.thumbnail_image_fetcher = thumbnail_image_fetcher
         self.latest_inspected_media_summary: InspectedMediaSummary | None = None
         self.latest_requested_media_url: str | None = None
+        self.selected_media_quality_choice_index = 0
+
+    def handle_media_quality_choice_selected(self, selected_choice_index: int) -> None:
+        self.selected_media_quality_choice_index = selected_choice_index
+
+    def current_download_selection(self) -> tuple[str, MediaQualityChoice] | None:
+        inspected_media_summary = self.latest_inspected_media_summary
+        if inspected_media_summary is None:
+            return None
+        offered_media_quality_choices = build_media_quality_choices_for_available_heights(
+            inspected_media_summary.available_video_heights
+        )
+        selected_choice_index = self.selected_media_quality_choice_index
+        # WHY: the menu is rebuilt on every inspection; a stale index falls back to "Melhor".
+        if not 0 <= selected_choice_index < len(offered_media_quality_choices):
+            selected_choice_index = 0
+        return inspected_media_summary.media_url, offered_media_quality_choices[
+            selected_choice_index
+        ]
 
     def handle_media_url_text_changed(self, raw_media_url: str) -> None:
         media_url_validation_outcome = validate_media_url_syntax(raw_media_url)
@@ -77,6 +100,7 @@ class MediaInspectionPresenter:
             )
             return
         self.latest_inspected_media_summary = inspected_media_summary
+        self.selected_media_quality_choice_index = 0
         self.media_inspection_view.show_inspected_media_summary(
             build_inspected_media_summary_view_model(inspected_media_summary)
         )

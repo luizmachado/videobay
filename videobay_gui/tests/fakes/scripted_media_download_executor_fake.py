@@ -27,6 +27,10 @@ class ScriptedMediaDownloadExecutorFake:
             if is_download_cancellation_requested():
                 raise MediaDownloadCancelledError(media_url)
             on_download_progress(scripted_progress_snapshot)
+        # PROVENANCE: yt-dlp always fires a final "finished" hook, where the real adapter checks
+        # cancellation too, so a cancel request is honoured even without progress events.
+        if is_download_cancellation_requested():
+            raise MediaDownloadCancelledError(media_url)
         if self.scripted_download_error is not None:
             raise self.scripted_download_error
         return self.scripted_outcome

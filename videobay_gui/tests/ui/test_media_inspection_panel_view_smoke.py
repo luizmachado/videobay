@@ -74,6 +74,7 @@ def smoke_rig() -> Iterator[MediaInspectionPanelSmokeRig]:
     panel_view.bind_media_inspection_presenter_callbacks(
         media_inspection_presenter.handle_media_url_text_changed,
         media_inspection_presenter.handle_inspect_media_url_requested,
+        media_inspection_presenter.handle_media_quality_choice_selected,
     )
     main_window_view.update()
     yield smoke_rig

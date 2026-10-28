@@ -51,3 +51,22 @@ def test_task_exception_is_delivered_to_failure_callback_on_drain():
 
 def test_drain_with_nothing_completed_runs_no_callbacks():
     assert ThreadingBackgroundWorkerPoolAdapter().drain_completed_callbacks_on_ui_thread() == 0
+
+
+def test_posted_ui_callback_waits_for_drain_and_keeps_order_with_task_results():
+    background_worker_pool = ThreadingBackgroundWorkerPoolAdapter()
+    delivered_ui_events: list[str] = []
+
+    def post_progress_then_return() -> str:
+        background_worker_pool.post_callback_to_ui_thread(lambda: delivered_ui_events.append("50%"))
+        return "done"
+
+    background_worker_pool.submit_background_task(
+        post_progress_then_return, delivered_ui_events.append, lambda _error: None
+    )
+    background_worker_pool.shutdown_background_workers(wait_for_running_tasks=True)
+    assert delivered_ui_events == []
+
+    background_worker_pool.drain_completed_callbacks_on_ui_thread()
+
+    assert delivered_ui_events == ["50%", "done"]

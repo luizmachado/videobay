@@ -13,13 +13,14 @@
 ## Visão de componentes (ports & adapters)
 
 ```
- [CTk views] ⇄ [Presenters + view-models]  ← core (sem I/O, sem tkinter, sem yt_dlp)
+ [CTk views] ⇄ [MediaInspectionPresenter · SingleMediaDownloadPresenter + view-models]  ← core
                        │ usa
         ┌──────────────┼──────────────────────────────┐
   MediaMetadataExtractorPort   MediaDownloadExecutorPort   VideobaySettingsStorePort
-  ThumbnailImageFetcherPort    FfmpegAvailabilityProbePort  BackgroundWorkerPoolPort  ClockPort
+  ThumbnailImageFetcherPort    FfmpegAvailabilityProbePort  BackgroundWorkerPoolPort  OutputDirectoryAccessProbePort
         │ implementados por (adapters/)
-  YtDlpMetadataExtractorAdapter · YtDlpDownloadExecutorAdapter · JsonFileVideobaySettingsStoreAdapter
+  YtDlpMetadataExtractorAdapter · YtDlpDownloadExecutorAdapter · JsonFileVideobaySettingsStoreAdapter (XDG)
+  LocalOutputDirectoryAccessProbeAdapter · bundled_deno_runtime_locator (ADR-0008)
   UrllibThumbnailImageFetcherAdapter · ShutilWhichFfmpegProbeAdapter · ThreadingBackgroundWorkerPoolAdapter
         ↑ instanciados só em src/videobay_gui/videobay_composition_root.py
 ```
@@ -39,10 +40,9 @@
 | `MediaDownloadExecutorPort` | `YtDlpDownloadExecutorAdapter` | `ScriptedMediaDownloadExecutorFake` | sim |
 | `VideobaySettingsStorePort` | `JsonFileVideobaySettingsStoreAdapter` | `InMemoryVideobaySettingsStoreFake` | sim |
 | `ThumbnailImageFetcherPort` | `UrllibThumbnailImageFetcherAdapter` | `StaticThumbnailImageFetcherFake` | sim |
-| `FfmpegAvailabilityProbePort` | `ShutilWhichFfmpegProbeAdapter` | `FixedFfmpegAvailabilityProbeFake` | sim |
+| `FfmpegAvailabilityProbePort` | `ShutilWhichFfmpegProbeAdapter` | `FixedFfmpegAvailabilityProbeFake` | não (adapter trivial) |
 | `BackgroundWorkerPoolPort` | `ThreadingBackgroundWorkerPoolAdapter` | `ManuallyDrainedBackgroundWorkerPoolFake` | sim |
-| `OutputDirectoryAccessProbePort` | `LocalOutputDirectoryAccessProbeAdapter` | (fake por teste) | não |
-| `ClockPort` | `SystemMonotonicClockAdapter` | `ManualTickClockFake` | sim |
+| `OutputDirectoryAccessProbePort` | `LocalOutputDirectoryAccessProbeAdapter` | `ScriptedOutputDirectoryAccessProbeFake` | não |
 
 ## Fluxo de dados (caminho principal)
 1. O usuário cola a URL, e `validate_media_url_syntax` valida a sintaxe.

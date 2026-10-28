@@ -24,6 +24,7 @@ class MediaInspectionPanelView(customtkinter.CTkFrame):
         super().__init__(master, fg_color="transparent")
         self.on_media_url_text_changed: Callable[[str], None] = lambda _media_url_text: None
         self.on_inspect_media_url_requested: Callable[[str], None] = lambda _media_url_text: None
+        self.on_media_quality_choice_selected: Callable[[int], None] = lambda _choice_index: None
         self.media_thumbnail_ctk_image: customtkinter.CTkImage | None = None
         self.build_media_url_bar_widgets()
         self.build_media_card_widgets()
@@ -57,7 +58,7 @@ class MediaInspectionPanelView(customtkinter.CTkFrame):
 
     def build_media_card_widgets(self) -> None:
         self.media_card_frame = customtkinter.CTkFrame(self, corner_radius=12)
-        self.media_card_frame.pack(fill="both", expand=True, padx=16, pady=12)
+        self.media_card_frame.pack(fill="x", padx=16, pady=12)
         self.media_thumbnail_label = customtkinter.CTkLabel(
             self.media_card_frame,
             text=MEDIA_THUMBNAIL_PLACEHOLDER_TEXT,
@@ -81,7 +82,10 @@ class MediaInspectionPanelView(customtkinter.CTkFrame):
         )
         self.media_details_label.grid(row=1, column=1, sticky="ew", padx=(0, 12))
         self.media_quality_option_menu = customtkinter.CTkOptionMenu(
-            self.media_card_frame, values=[""], state="disabled"
+            self.media_card_frame,
+            values=[""],
+            state="disabled",
+            command=self.forward_media_quality_choice_selection,
         )
         self.media_quality_option_menu.grid(row=2, column=1, sticky="w", padx=(0, 12), pady=8)
         self.retry_media_inspection_button = customtkinter.CTkButton(
@@ -93,9 +97,15 @@ class MediaInspectionPanelView(customtkinter.CTkFrame):
         self,
         on_media_url_text_changed: Callable[[str], None],
         on_inspect_media_url_requested: Callable[[str], None],
+        on_media_quality_choice_selected: Callable[[int], None],
     ) -> None:
         self.on_media_url_text_changed = on_media_url_text_changed
         self.on_inspect_media_url_requested = on_inspect_media_url_requested
+        self.on_media_quality_choice_selected = on_media_quality_choice_selected
+
+    def forward_media_quality_choice_selection(self, selected_choice_label: str) -> None:
+        offered_choice_labels = list(self.media_quality_option_menu.cget("values"))
+        self.on_media_quality_choice_selected(offered_choice_labels.index(selected_choice_label))
 
     def forward_media_url_text_change(self, *_tk_trace_arguments: object) -> None:
         self.on_media_url_text_changed(self.media_url_text_variable.get())

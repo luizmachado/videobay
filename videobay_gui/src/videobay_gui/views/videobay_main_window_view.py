@@ -7,9 +7,10 @@ from collections.abc import Callable
 import customtkinter
 
 from videobay_gui.views.media_inspection_panel_view import MediaInspectionPanelView
+from videobay_gui.views.single_media_download_panel_view import SingleMediaDownloadPanelView
 
-VIDEOBAY_MAIN_WINDOW_INITIAL_GEOMETRY = "820x520"
-VIDEOBAY_MAIN_WINDOW_MINIMUM_SIZE = (640, 420)
+VIDEOBAY_MAIN_WINDOW_INITIAL_GEOMETRY = "820x620"
+VIDEOBAY_MAIN_WINDOW_MINIMUM_SIZE = (680, 560)
 
 
 class VideobayMainWindowView(customtkinter.CTk):
@@ -20,7 +21,9 @@ class VideobayMainWindowView(customtkinter.CTk):
         self.geometry(VIDEOBAY_MAIN_WINDOW_INITIAL_GEOMETRY)
         self.minsize(*VIDEOBAY_MAIN_WINDOW_MINIMUM_SIZE)
         self.media_inspection_panel_view = MediaInspectionPanelView(self)
-        self.media_inspection_panel_view.pack(fill="both", expand=True)
+        self.media_inspection_panel_view.pack(fill="x")
+        self.single_media_download_panel_view = SingleMediaDownloadPanelView(self)
+        self.single_media_download_panel_view.pack(fill="x", padx=16, pady=(0, 16))
 
     def schedule_recurring_ui_callback(
         self, callback_interval_milliseconds: int, recurring_ui_callback: Callable[[], object]

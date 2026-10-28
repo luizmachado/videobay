@@ -56,6 +56,11 @@ class ThreadingBackgroundWorkerPoolAdapter:
             functools.partial(on_background_task_success, background_task_result)
         )
 
+    def post_callback_to_ui_thread(self, ui_thread_callback: Callable[[], None]) -> None:
+        # WHY: same queue as task results, so download progress can never be drawn after the
+        # "completed" state that follows it.
+        self.completed_callbacks_for_ui_thread.put(ui_thread_callback)
+
     def drain_completed_callbacks_on_ui_thread(self) -> int:
         drained_callback_count = 0
         while True:

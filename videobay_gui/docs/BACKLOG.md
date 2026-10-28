@@ -28,7 +28,7 @@
   - Edge cases: EC-08
 - [x] S-009 `YtDlpDownloadExecutorAdapter` + cancelamento
   - Edge cases: EC-07, EC-09
-- [ ] S-010 View de progresso
+- [x] S-010 View de progresso
 
 ## F-03 Áudio
 - [ ] S-011 Pós-processador MP3/M4A
