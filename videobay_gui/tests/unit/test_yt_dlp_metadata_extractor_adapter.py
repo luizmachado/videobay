@@ -189,3 +189,23 @@ def test_missing_info_dict_is_an_unknown_extraction_failure():
     assert raised_failure.value.media_inspection_failure_kind == (
         MediaInspectionFailureKind.UNKNOWN_EXTRACTION_FAILURE
     )
+
+
+def test_collects_heights_only_from_formats_that_carry_video():
+    adapter, _ = build_adapter_with_scripted_client(
+        {
+            "title": "x",
+            "formats": [
+                {"format_id": "140", "vcodec": "none", "acodec": "mp4a", "height": None},
+                {"format_id": "137", "vcodec": "avc1", "height": 1080},
+                {"format_id": "136", "vcodec": "avc1", "height": 720},
+                {"format_id": "sb0", "vcodec": "none", "height": 90},
+                {"format_id": "hls", "height": 480},
+                {"format_id": "odd"},
+            ],
+        }
+    )
+
+    inspected_media_summary = adapter.extract_inspected_media_summary(SAMPLE_VIDEO_URL)
+
+    assert sorted(inspected_media_summary.available_video_heights) == [480, 720, 1080]

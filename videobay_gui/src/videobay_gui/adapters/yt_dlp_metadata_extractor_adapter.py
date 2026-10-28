@@ -118,6 +118,22 @@ def build_inspected_media_summary_from_yt_dlp_info_dict(
         media_thumbnail_url=pick_best_yt_dlp_thumbnail_url(yt_dlp_info_dict),
         is_live_broadcast=bool(yt_dlp_info_dict.get("is_live"))
         or yt_dlp_info_dict.get("live_status") in LIVE_OR_UPCOMING_YT_DLP_LIVE_STATUSES,
+        available_video_heights=collect_available_video_heights_from_yt_dlp_formats(
+            yt_dlp_info_dict.get("formats") or []
+        ),
+    )
+
+
+def collect_available_video_heights_from_yt_dlp_formats(
+    yt_dlp_format_entries: list[dict[str, Any]],
+) -> tuple[int, ...]:
+    # WHY: audio-only formats and storyboard thumbnails ("sb*") report vcodec "none"; their
+    # height must not create fake resolution options.
+    return tuple(
+        yt_dlp_format_entry["height"]
+        for yt_dlp_format_entry in yt_dlp_format_entries
+        if isinstance(yt_dlp_format_entry.get("height"), int)
+        and yt_dlp_format_entry.get("vcodec") != "none"
     )
 
 
