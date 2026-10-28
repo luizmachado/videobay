@@ -35,9 +35,10 @@ def build_playlist_item_page_view_model(
     page_count = max(1, -(-len(inspected_playlist_entries) // PLAYLIST_ITEMS_PER_PAGE))
     current_page_number = min(max(page_number, 1), page_count)
     first_entry_offset = (current_page_number - 1) * PLAYLIST_ITEMS_PER_PAGE
-    entries_on_page = inspected_playlist_entries[
-        first_entry_offset : first_entry_offset + PLAYLIST_ITEMS_PER_PAGE
-    ]
+    # WHY: named end offset, because ruff format spaces a complex slice (`a : a + n`) and the
+    # upstream autopep8 check (E203) rejects that space.
+    page_end_entry_offset = first_entry_offset + PLAYLIST_ITEMS_PER_PAGE
+    entries_on_page = inspected_playlist_entries[first_entry_offset:page_end_entry_offset]
     selected_index_set = set(selected_playlist_item_indices)
     return PlaylistItemPageViewModel(
         item_rows=tuple(

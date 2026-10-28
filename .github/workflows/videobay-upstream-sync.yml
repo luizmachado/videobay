@@ -18,15 +18,11 @@ jobs:
     permissions:
       contents: read  # GITHUB_TOKEN only reads; the push uses the PAT below
     steps:
-      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1  # v7.0.1  # zizmor: ignore[artipacked]
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1  # v7.0.1
         with:
           ref: master
           fetch-depth: 0
-          # WHY: upstream merges often touch .github/workflows/*, and GITHUB_TOKEN may not push those.
-          # Needs a fine-grained PAT with "Contents" and "Workflows" write on this fork only.
-          # WHY: credentials must persist for the final `git push`; this job uploads no artifacts,
-          # which is the leak path the artipacked audit guards against.
-          token: ${{ secrets.VIDEOBAY_UPSTREAM_SYNC_TOKEN }}
+          persist-credentials: false
       - name: Merge upstream/master
         run: |
           git config user.name "videobay-upstream-sync"
@@ -39,4 +35,14 @@ jobs:
           # WHY: this job pushes to master; it must not trust a cache another run could poison.
           enable-cache: false
       - run: make -C videobay_gui ci
-      - run: git push origin HEAD:master --follow-tags
+      - name: Push merged master
+        env:
+          # WHY: upstream merges often touch .github/workflows/*, and GITHUB_TOKEN may not push those.
+          # Needs a fine-grained PAT with "Contents" and "Workflows" write on this fork only.
+          # WHY: the PAT lives only in this step, never in .git/config, so the freshly merged
+          # upstream code that `make ci` runs above cannot read it.
+          VIDEOBAY_UPSTREAM_SYNC_TOKEN: ${{ secrets.VIDEOBAY_UPSTREAM_SYNC_TOKEN }}
+        run: >-
+          git push
+          "https://x-access-token:${VIDEOBAY_UPSTREAM_SYNC_TOKEN}@github.com/${GITHUB_REPOSITORY}.git"
+          HEAD:master --follow-tags
