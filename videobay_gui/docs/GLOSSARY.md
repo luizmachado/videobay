@@ -14,7 +14,9 @@
 | Pedido de download | Tudo que o usuário escolheu para um download | `VideoDownloadRequest` |
 | Job de download | Pedido na fila, com estado | `VideoDownloadJob`, `VideoDownloadJobStatus` |
 | Fila de downloads | Jobs ordenados com limite de concorrência | `VideoDownloadJobQueue` |
-| Instantâneo de progresso | Estado do progresso num momento | `DownloadProgressSnapshot` |
+| Instantâneo de progresso | Estado do progresso num momento; total pode ser estimado ou desconhecido (EC-08) | `DownloadProgressSnapshot`, `DownloadProgressViewModel` |
+| Falha de download | Categoria de erro durante o download, com mensagem e regra de "tentar de novo" | `MediaDownloadFailureKind`, `MediaDownloadFailedError`, `MediaDownloadCancelledError` |
+| Resultado do download | Arquivos gerados e se já existiam (EC-07) | `MediaDownloadOutcome` |
 | Construtor de opções | Traduz o pedido para opções do yt-dlp (+ aviso de fallback) | `build_yt_dlp_download_options`, `YtDlpDownloadOptionsBuildResult` |
 | Configurações | Preferências persistidas (pasta de destino, limite de downloads simultâneos) | `VideobayUserSettings` |
 | Problema na pasta de destino | Pasta inexistente, arquivo no lugar ou sem permissão (EC-06) | `OutputDirectoryProblem` |

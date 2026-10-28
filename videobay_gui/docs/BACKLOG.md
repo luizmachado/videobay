@@ -24,7 +24,7 @@
   - Edge cases: EC-04
 - [x] S-007 Settings store + pasta de destino
   - Edge cases: EC-06, EC-15
-- [ ] S-008 `MediaDownloadExecutorPort` + `DownloadProgressSnapshot`
+- [x] S-008 `MediaDownloadExecutorPort` + `DownloadProgressSnapshot`
   - Edge cases: EC-08
 - [ ] S-009 `YtDlpDownloadExecutorAdapter` + cancelamento
   - Edge cases: EC-07, EC-09
