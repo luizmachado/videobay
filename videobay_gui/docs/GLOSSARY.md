@@ -3,6 +3,7 @@
 | Termo | Significado | Nome no código |
 |---|---|---|
 | URL de mídia | Endereço colado pelo usuário | `media_url` |
+| Motivo de rejeição da URL | Por que a sintaxe da URL foi recusada | `MediaUrlRejectionReason` |
 | Inspeção | Consulta de metadados sem baixar | `InspectedMediaSummary`, `InspectedPlaylistSummary` |
 | Escolha de qualidade | Resolução alvo ou só áudio | `MediaQualityChoice` |
 | Codec de áudio de saída | Formato da extração de áudio | `AudioOutputCodec` |
