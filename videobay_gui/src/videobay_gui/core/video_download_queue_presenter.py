@@ -1,18 +1,15 @@
-import os
-from dataclasses import dataclass, replace
+from dataclasses import dataclass
 from typing import Any
 
 from videobay_gui.core.download_progress_snapshot import DownloadProgressSnapshot
-from videobay_gui.core.media_download_failure import (
-    MediaDownloadCancelledError,
-    MediaDownloadFailedError,
-    MediaDownloadFailureKind,
-    describe_media_download_failure_for_user,
-    is_media_download_failure_retryable,
-)
+from videobay_gui.core.media_download_failure import MediaDownloadCancelledError
 from videobay_gui.core.media_download_outcome import MediaDownloadOutcome
 from videobay_gui.core.media_download_selection import MediaDownloadSelection
 from videobay_gui.core.video_download_job import VideoDownloadJobStatus
+from videobay_gui.core.video_download_job_outcome_messages import (
+    describe_download_failure_for_job_row,
+    describe_finished_download_outcome_for_job_row,
+)
 from videobay_gui.core.video_download_job_queue import (
     DuplicateVideoDownloadRequestError,
     VideoDownloadJobCancellationEffect,
@@ -22,7 +19,9 @@ from videobay_gui.core.video_download_job_row_view_model import (
     build_video_download_job_row_view_model,
 )
 from videobay_gui.core.video_download_request import VideoDownloadRequest
-from videobay_gui.core.videobay_user_settings import describe_output_directory_problem_for_user
+from videobay_gui.core.videobay_output_directory_preference import (
+    VideobayOutputDirectoryPreference,
+)
 from videobay_gui.core.yt_dlp_download_options_builder import (
     build_yt_dlp_download_options,
     find_download_blocking_problem,
@@ -58,6 +57,9 @@ class VideoDownloadQueuePresenter:
         self.video_download_job_queue = VideoDownloadJobQueue(
             queue_ports.videobay_settings_store.load_videobay_user_settings().maximum_concurrent_downloads
         )
+        self.output_directory_preference = VideobayOutputDirectoryPreference(
+            queue_ports.videobay_settings_store, queue_ports.output_directory_access_probe
+        )
         self.yt_dlp_options_by_job: dict[int, dict[str, Any]] = {}
         self.outcome_messages_by_job: dict[int, str] = {}
         self.retryable_failure_by_job: dict[int, bool] = {}
@@ -66,11 +68,9 @@ class VideoDownloadQueuePresenter:
         self.progress_render_scheduled_jobs: set[int] = set()
 
     def present_initial_download_state(self) -> None:
-        self.queue_view.show_output_directory(self.load_preferred_output_directory())
-
-    def load_preferred_output_directory(self) -> str:
-        settings_store = self.queue_ports.videobay_settings_store
-        return settings_store.load_videobay_user_settings().preferred_output_directory
+        self.queue_view.show_output_directory(
+            self.output_directory_preference.load_preferred_output_directory()
+        )
 
     def handle_output_directory_chosen(self, chosen_output_directory: str) -> None:
         normalized_output_directory = chosen_output_directory.strip()
@@ -79,26 +79,18 @@ class VideoDownloadQueuePresenter:
             return
         if not self.show_output_directory_problem_if_any(normalized_output_directory):
             return
-        settings_store = self.queue_ports.videobay_settings_store
-        settings_store.save_videobay_user_settings(
-            replace(
-                settings_store.load_videobay_user_settings(),
-                preferred_output_directory=normalized_output_directory,
-            )
+        self.output_directory_preference.save_preferred_output_directory(
+            normalized_output_directory
         )
         self.queue_view.show_output_directory(normalized_output_directory)
 
     def show_output_directory_problem_if_any(self, output_directory: str) -> bool:
-        output_directory_problem = (
-            self.queue_ports.output_directory_access_probe.find_output_directory_problem(
-                output_directory
-            )
+        output_directory_problem_message = (
+            self.output_directory_preference.find_output_directory_problem_message(output_directory)
         )
-        if output_directory_problem is None:
+        if output_directory_problem_message is None:
             return True
-        self.queue_view.show_download_notice(
-            describe_output_directory_problem_for_user(output_directory_problem, output_directory)
-        )
+        self.queue_view.show_download_notice(output_directory_problem_message)
         return False
 
     def handle_download_requested_for_selection(
@@ -107,7 +99,7 @@ class VideoDownloadQueuePresenter:
         if media_download_selection is None:
             self.queue_view.show_download_notice(NO_INSPECTED_MEDIA_TO_DOWNLOAD_NOTICE)
             return
-        output_directory = self.load_preferred_output_directory()
+        output_directory = self.output_directory_preference.load_preferred_output_directory()
         # WHY: the folder may have been unmounted or deleted since it was chosen (EC-06).
         if not self.show_output_directory_problem_if_any(output_directory):
             return
@@ -203,15 +195,8 @@ class VideoDownloadQueuePresenter:
     def handle_job_download_finished(
         self, job_identifier: int, media_download_outcome: MediaDownloadOutcome
     ) -> None:
-        downloaded_file_name = (
-            os.path.basename(media_download_outcome.downloaded_file_paths[0])
-            if media_download_outcome.downloaded_file_paths
-            else ""
-        )
         self.outcome_messages_by_job[job_identifier] = (
-            f"Já baixado: {downloaded_file_name}"
-            if media_download_outcome.was_already_downloaded
-            else downloaded_file_name
+            describe_finished_download_outcome_for_job_row(media_download_outcome)
         )
         self.finish_job(job_identifier, VideoDownloadJobStatus.COMPLETED)
 
@@ -221,17 +206,10 @@ class VideoDownloadQueuePresenter:
         if isinstance(media_download_error, MediaDownloadCancelledError):
             self.finish_job(job_identifier, VideoDownloadJobStatus.CANCELLED)
             return
-        media_download_failure_kind = (
-            media_download_error.media_download_failure_kind
-            if isinstance(media_download_error, MediaDownloadFailedError)
-            else MediaDownloadFailureKind.UNKNOWN_DOWNLOAD_FAILURE
-        )
-        self.outcome_messages_by_job[job_identifier] = describe_media_download_failure_for_user(
-            media_download_failure_kind
-        )
-        self.retryable_failure_by_job[job_identifier] = is_media_download_failure_retryable(
-            media_download_failure_kind
-        )
+        (
+            self.outcome_messages_by_job[job_identifier],
+            self.retryable_failure_by_job[job_identifier],
+        ) = describe_download_failure_for_job_row(media_download_error)
         self.finish_job(job_identifier, VideoDownloadJobStatus.FAILED)
 
     def finish_job(self, job_identifier: int, finishing_status: VideoDownloadJobStatus) -> None:
