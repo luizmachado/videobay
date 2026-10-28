@@ -15,6 +15,7 @@
 | Pedido de download | Tudo que o usuário escolheu para um download | `VideoDownloadRequest` |
 | Job de download | Pedido na fila, com estado; transições inválidas lançam erro | `VideoDownloadJob`, `VideoDownloadJobStatus`, `InvalidVideoDownloadJobTransitionError` |
 | Fila de downloads | Jobs ordenados com limite de concorrência | `VideoDownloadJobQueue` |
+| Efeito do cancelamento | Cancelado antes de começar, parada pedida ao executor, ou nada a cancelar | `VideoDownloadJobCancellationEffect` |
 | Instantâneo de progresso | Estado do progresso num momento; total pode ser estimado ou desconhecido (EC-08) | `DownloadProgressSnapshot`, `DownloadProgressViewModel` |
 | Falha de download | Categoria de erro durante o download, com mensagem e regra de "tentar de novo" | `MediaDownloadFailureKind`, `MediaDownloadFailedError`, `MediaDownloadCancelledError` |
 | Resultado do download | Arquivos gerados e se já existiam (EC-07) | `MediaDownloadOutcome` |

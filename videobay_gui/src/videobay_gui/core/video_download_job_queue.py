@@ -1,9 +1,17 @@
+from enum import StrEnum
+
 from videobay_gui.core.video_download_job import VideoDownloadJob, VideoDownloadJobStatus
 from videobay_gui.core.video_download_request import VideoDownloadRequest
 
 
 class UnknownVideoDownloadJobError(KeyError):
     pass
+
+
+class VideoDownloadJobCancellationEffect(StrEnum):
+    CANCELLED_BEFORE_START = "cancelled_before_start"
+    STOP_RUNNING_DOWNLOAD_REQUESTED = "stop_running_download_requested"
+    NOTHING_TO_CANCEL = "nothing_to_cancel"
 
 
 class VideoDownloadJobQueue:
@@ -51,6 +59,31 @@ class VideoDownloadJobQueue:
                 video_download_job_identifier
             ).transition_video_download_job_to(finishing_status)
         )
+
+    def cancel_video_download_job(
+        self, video_download_job_identifier: int
+    ) -> VideoDownloadJobCancellationEffect:
+        video_download_job = self.find_video_download_job(video_download_job_identifier)
+        job_status = video_download_job.video_download_job_status
+        if job_status is VideoDownloadJobStatus.QUEUED:
+            self.store_video_download_job(
+                video_download_job.transition_video_download_job_to(
+                    VideoDownloadJobStatus.CANCELLED
+                )
+            )
+            return VideoDownloadJobCancellationEffect.CANCELLED_BEFORE_START
+        if job_status is VideoDownloadJobStatus.RUNNING:
+            # WHY: the job stays RUNNING until the executor confirms the stop; marking it cancelled
+            # now would free its slot while yt-dlp is still writing to disk.
+            return VideoDownloadJobCancellationEffect.STOP_RUNNING_DOWNLOAD_REQUESTED
+        return VideoDownloadJobCancellationEffect.NOTHING_TO_CANCEL
+
+    def retry_video_download_job(self, video_download_job_identifier: int) -> VideoDownloadJob:
+        retried_job = self.find_video_download_job(
+            video_download_job_identifier
+        ).transition_video_download_job_to(VideoDownloadJobStatus.QUEUED)
+        self.store_video_download_job(retried_job)
+        return retried_job
 
     def change_maximum_concurrent_downloads(self, maximum_concurrent_downloads: int) -> None:
         self.maximum_concurrent_downloads = maximum_concurrent_downloads
