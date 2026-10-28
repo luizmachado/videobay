@@ -88,5 +88,5 @@
 - O upstream pode criar arquivos com os mesmos nomes. O workflow de sync falha alto e não faz push.
 - A política do upstream proíbe contribuições assistidas por IA. Este código fica só no fork e nunca é enviado ao yt-dlp.
 - O CustomTkinter não tem drag & drop nativo. Fica fora da v1.
-- Runtime JS do YouTube: resolvido na ADR-0008 (deno 2.9.8 embutido + `yt-dlp[default]`). Falta confirmar o ganho no download (S-009).
+- Runtime JS do YouTube: resolvido na ADR-0008 (deno 2.9.8 embutido + `yt-dlp[default]`). A S-009 confirmou que sem deno o download do YouTube falha.
 - A Vimeo passou a exigir login para a maioria dos vídeos. Hoje isso cai em EC-02 ("exige login").

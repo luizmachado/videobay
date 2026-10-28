@@ -1,5 +1,12 @@
+import os
+import shutil
+from pathlib import Path
+
+import pytest
+
 from tests.contract.media_download_executor_port_contract import MediaDownloadExecutorPortContract
 from tests.fakes.scripted_media_download_executor_fake import ScriptedMediaDownloadExecutorFake
+from videobay_gui.adapters.yt_dlp_download_executor_adapter import YtDlpDownloadExecutorAdapter
 from videobay_gui.core.download_progress_snapshot import DownloadProgressSnapshot
 from videobay_gui.ports.media_download_executor_port import MediaDownloadExecutorPort
 
@@ -23,3 +30,29 @@ class TestScriptedMediaDownloadExecutorFakeHonoursContract(MediaDownloadExecutor
 
     def download_options_for_contract(self) -> dict[str, object]:
         return {"format": "b"}
+
+
+@pytest.mark.integration
+class TestYtDlpDownloadExecutorAdapterHonoursContract(MediaDownloadExecutorPortContract):
+    @pytest.fixture(autouse=True)
+    def use_temporary_download_directory(self, tmp_path: Path) -> None:
+        self.temporary_download_directory = tmp_path
+
+    def build_executor_under_contract(self) -> MediaDownloadExecutorPort:
+        # WHY: VIDEOBAY_CONTRACT_WITHOUT_DENO=1 lets us compare downloads with and without the
+        # JS runtime (ADR-0008 follow-up) using the very same contract.
+        use_deno = os.environ.get("VIDEOBAY_CONTRACT_WITHOUT_DENO") != "1"
+        return YtDlpDownloadExecutorAdapter(
+            deno_executable_path=shutil.which("deno") if use_deno else None
+        )
+
+    def downloadable_media_url(self) -> str:
+        # PROVENANCE: "Me at the zoo" (19 s); its worst single-file format is well under 1 MB.
+        return "https://www.youtube.com/watch?v=jNQXAC9IVRw"
+
+    def download_options_for_contract(self) -> dict[str, object]:
+        return {
+            "format": "w",
+            "outtmpl": {"default": str(self.temporary_download_directory / "%(id)s.%(ext)s")},
+            "overwrites": False,
+        }

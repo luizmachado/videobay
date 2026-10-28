@@ -26,7 +26,7 @@
   - Edge cases: EC-06, EC-15
 - [x] S-008 `MediaDownloadExecutorPort` + `DownloadProgressSnapshot`
   - Edge cases: EC-08
-- [ ] S-009 `YtDlpDownloadExecutorAdapter` + cancelamento
+- [x] S-009 `YtDlpDownloadExecutorAdapter` + cancelamento
   - Edge cases: EC-07, EC-09
 - [ ] S-010 View de progresso
 

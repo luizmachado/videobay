@@ -28,8 +28,10 @@ No Debian 13 o `/tmp` é tmpfs, então os ~160 MB extraídos ocupam **RAM** enqu
 
 ### Medido após a implementação (S-024)
 - Binário: **74,4 MB**. Extraído em `/tmp`: **149 MB**. Memória do processo com a janela aberta: **64 MB**.
-- A listagem de formatos do YouTube saiu **igual com e sem deno** (até 2160p em `aqz-KE-bpKQ`). O ganho esperado
-  aparece no download, onde as URLs dependem dos desafios resolvidos. A S-009 precisa confirmar isso.
+- A listagem de formatos do YouTube saiu **igual com e sem deno** (até 2160p em `aqz-KE-bpKQ`).
+- **Confirmado na S-009 (contrato real de download):** sem deno, o download do YouTube falha com
+  "Requested format is not available"; com o deno 2.9.8 o download e o cancelamento passam. O deno é obrigatório
+  para baixar do YouTube, não só uma melhoria. Rodando do código-fonte, o desenvolvedor precisa de deno no PATH.
 
 ## Alternativas consideradas
 - Exigir o deno instalado no sistema: binário pequeno, mas exige um passo a mais do usuário.

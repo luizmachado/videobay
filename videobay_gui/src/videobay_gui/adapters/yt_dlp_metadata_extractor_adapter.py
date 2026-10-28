@@ -1,11 +1,16 @@
-from collections.abc import Callable
-from contextlib import AbstractContextManager
-from typing import Any, Protocol, cast
+from typing import Any
 
-import yt_dlp
 from yt_dlp.networking.exceptions import HTTPError, TransportError
-from yt_dlp.utils import DownloadError, GeoRestrictedError, UnsupportedError, YoutubeDLError
+from yt_dlp.utils import GeoRestrictedError, UnsupportedError, YoutubeDLError
 
+from videobay_gui.adapters.yt_dlp_shared_client_configuration import (
+    TRANSIENT_HTTP_STATUS_CODES,
+    SilencedYtDlpLoggerForGui,
+    YtDlpInfoExtractingClientFactory,
+    build_real_yt_dlp_info_extracting_client,
+    build_yt_dlp_javascript_runtime_params,
+    unwrap_original_yt_dlp_error_cause,
+)
 from videobay_gui.core.inspected_media_summary import InspectedMediaSummary
 from videobay_gui.core.media_inspection_failure import (
     MediaInspectionFailedError,
@@ -14,8 +19,6 @@ from videobay_gui.core.media_inspection_failure import (
 
 # WHY: without a timeout a dead connection freezes the inspection worker forever (EC-03).
 YT_DLP_INSPECTION_SOCKET_TIMEOUT_SECONDS = 15
-# WHY: 429 (rate limit) and 5xx are transient, so the user gets "tentar de novo" for them.
-TRANSIENT_HTTP_STATUS_CODES = frozenset({408, 429, 500, 502, 503, 504})
 LIVE_OR_UPCOMING_YT_DLP_LIVE_STATUSES = frozenset({"is_live", "is_upcoming"})
 # PROVENANCE: substrings of yt-dlp extractor messages (youtube/_video.py, common.py login
 # helpers); yt-dlp raises plain ExtractorError for these, so the text is the only signal.
@@ -32,40 +35,6 @@ MEDIA_UNAVAILABLE_MESSAGE_FRAGMENTS = (
 )
 
 
-class YtDlpInfoExtractingClient(Protocol):
-    def extract_info(self, url: str, download: bool = True) -> dict[str, Any] | None: ...
-
-
-type YtDlpInfoExtractingClientFactory = Callable[
-    [dict[str, Any]], AbstractContextManager[YtDlpInfoExtractingClient]
-]
-
-
-def build_real_yt_dlp_info_extracting_client(
-    yt_dlp_params: dict[str, Any],
-) -> AbstractContextManager[YtDlpInfoExtractingClient]:
-    # WHY: yt_dlp types params as a private TypedDict and extract_info loosely; casting only
-    # here keeps the rest of the adapter strictly typed.
-    real_yt_dlp_client = yt_dlp.YoutubeDL(cast(Any, yt_dlp_params))
-    return cast(AbstractContextManager[YtDlpInfoExtractingClient], real_yt_dlp_client)
-
-
-class SilencedYtDlpLoggerForGui:
-    """yt-dlp writes errors to stderr by default; the GUI reports them via exceptions instead."""
-
-    def debug(self, yt_dlp_log_message: str) -> None:
-        return None
-
-    def info(self, yt_dlp_log_message: str) -> None:
-        return None
-
-    def warning(self, yt_dlp_log_message: str) -> None:
-        return None
-
-    def error(self, yt_dlp_log_message: str) -> None:
-        return None
-
-
 def build_yt_dlp_media_inspection_params(deno_executable_path: str | None) -> dict[str, Any]:
     yt_dlp_media_inspection_params: dict[str, Any] = {
         "quiet": True,
@@ -76,10 +45,9 @@ def build_yt_dlp_media_inspection_params(deno_executable_path: str | None) -> di
         "socket_timeout": YT_DLP_INSPECTION_SOCKET_TIMEOUT_SECONDS,
         "logger": SilencedYtDlpLoggerForGui(),
     }
-    if deno_executable_path is not None:
-        # PROVENANCE: ADR-0008. YouTube needs a JS runtime for its challenges; without a path
-        # yt-dlp keeps its default lookup (deno on PATH) and may return fewer formats.
-        yt_dlp_media_inspection_params["js_runtimes"] = {"deno": {"path": deno_executable_path}}
+    yt_dlp_media_inspection_params.update(
+        build_yt_dlp_javascript_runtime_params(deno_executable_path)
+    )
     return yt_dlp_media_inspection_params
 
 
@@ -152,15 +120,6 @@ def pick_best_yt_dlp_thumbnail_url(yt_dlp_info_dict: dict[str, Any]) -> str | No
     if not yt_dlp_thumbnail_entries:
         return None
     return yt_dlp_thumbnail_entries[-1].get("url")
-
-
-def unwrap_original_yt_dlp_error_cause(yt_dlp_error: Exception) -> Exception:
-    # PROVENANCE: YoutubeDL.trouble() re-raises extraction failures as DownloadError and keeps
-    # the original exception in exc_info (yt_dlp/YoutubeDL.py, `raise DownloadError(...)`).
-    if not isinstance(yt_dlp_error, DownloadError) or not yt_dlp_error.exc_info:
-        return yt_dlp_error
-    original_yt_dlp_error = yt_dlp_error.exc_info[1]
-    return original_yt_dlp_error if isinstance(original_yt_dlp_error, Exception) else yt_dlp_error
 
 
 def classify_yt_dlp_inspection_error(yt_dlp_error: Exception) -> MediaInspectionFailureKind:
