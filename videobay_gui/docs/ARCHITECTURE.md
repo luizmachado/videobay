@@ -41,6 +41,7 @@
 | `ThumbnailImageFetcherPort` | `UrllibThumbnailImageFetcherAdapter` | `StaticThumbnailImageFetcherFake` | sim |
 | `FfmpegAvailabilityProbePort` | `ShutilWhichFfmpegProbeAdapter` | `FixedFfmpegAvailabilityProbeFake` | sim |
 | `BackgroundWorkerPoolPort` | `ThreadingBackgroundWorkerPoolAdapter` | `ManuallyDrainedBackgroundWorkerPoolFake` | sim |
+| `OutputDirectoryAccessProbePort` | `LocalOutputDirectoryAccessProbeAdapter` | (fake por teste) | não |
 | `ClockPort` | `SystemMonotonicClockAdapter` | `ManualTickClockFake` | sim |
 
 ## Fluxo de dados (caminho principal)
