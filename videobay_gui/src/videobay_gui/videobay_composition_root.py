@@ -60,6 +60,12 @@ def build_videobay_gui_application() -> VideobayMainWindowView:
         media_inspection_presenter.handle_inspect_media_url_requested,
         media_inspection_presenter.handle_media_quality_choice_selected,
     )
+    media_inspection_panel_view.bind_playlist_and_subtitle_callbacks(
+        media_inspection_presenter.handle_subtitle_language_selection_changed,
+        media_inspection_presenter.handle_playlist_page_requested,
+        media_inspection_presenter.handle_playlist_item_checkbox_toggled,
+        media_inspection_presenter.handle_all_playlist_items_toggled,
+    )
     video_download_queue_panel_view = videobay_main_window_view.video_download_queue_panel_view
     video_download_queue_presenter = VideoDownloadQueuePresenter(
         video_download_queue_panel_view,

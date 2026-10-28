@@ -182,10 +182,9 @@ def test_thumbnail_is_fetched_in_background_after_summary_is_shown(
     assert presenter_harness.thumbnail_image_fetcher_fake.fetched_thumbnail_urls == []
     presenter_harness.background_worker_pool_fake.drain_pending_background_tasks()
 
-    assert presenter_harness.media_inspection_view_fake.recorded_view_call_names()[-2:] == [
-        "show_inspected_media_summary",
-        "show_media_thumbnail_image",
-    ]
+    view_call_names = presenter_harness.media_inspection_view_fake.recorded_view_call_names()
+    assert view_call_names[-1] == "show_media_thumbnail_image"
+    assert view_call_names.index("show_inspected_media_summary") < len(view_call_names) - 1
     assert (
         presenter_harness.media_inspection_view_fake.last_recorded_argument_of(
             "show_media_thumbnail_image"

@@ -1,6 +1,7 @@
 from typing import Protocol
 
 from videobay_gui.core.inspected_media_summary import InspectedMediaSummaryViewModel
+from videobay_gui.core.playlist_item_page_view_model import PlaylistItemPageViewModel
 
 
 class MediaInspectionViewPort(Protocol):
@@ -23,3 +24,9 @@ class MediaInspectionViewPort(Protocol):
     def show_media_thumbnail_image(self, thumbnail_image_bytes: bytes) -> None: ...
 
     def show_media_thumbnail_placeholder(self) -> None: ...
+
+    def show_playlist_item_page(
+        self, playlist_item_page_view_model: PlaylistItemPageViewModel | None
+    ) -> None:
+        """None hides the item list (single video or new inspection in progress)."""
+        ...

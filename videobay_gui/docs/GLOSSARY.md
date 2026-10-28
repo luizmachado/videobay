@@ -12,6 +12,7 @@
 | Seleção para download | URL, qualidade, título, itens marcados (playlist) e idiomas de legenda | `MediaDownloadSelection` |
 | Idiomas de legenda | Legendas enviadas pelo autor (playlist: pt/en/es fixos) | `available_subtitle_languages`, `PLAYLIST_SUBTITLE_LANGUAGE_OPTIONS` |
 | Linha da fila | Estado visual de um job (rótulos, barra, ações, tom) | `VideoDownloadJobRowViewModel`, `VideoDownloadJobRowTone` |
+| Página de itens da playlist | 50 itens por página, marcados/selecionáveis e contagem (EC-12) | `PlaylistItemPageViewModel`, `PlaylistItemRowViewModel` |
 | Escolha de qualidade | Altura máxima (None = melhor) ou só áudio com codec | `MediaQualityChoice` |
 | Faixa padrão de altura | 4320…144 px; alturas cortadas caem na faixa abaixo | `STANDARD_VIDEO_HEIGHT_TIERS` |
 | Codec de áudio de saída | Formato da extração de áudio (MP3 ou M4A); preenchido = escolha "só áudio" | `AudioOutputCodec` |

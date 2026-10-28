@@ -15,6 +15,7 @@ from videobay_gui.core.media_url_syntax_validation import (
     describe_media_url_rejection_reason_for_user,
     validate_media_url_syntax,
 )
+from videobay_gui.core.playlist_item_page_view_model import build_playlist_item_page_view_model
 from videobay_gui.ports.background_worker_pool_port import BackgroundWorkerPoolPort
 from videobay_gui.ports.media_inspection_view_port import MediaInspectionViewPort
 from videobay_gui.ports.media_metadata_extractor_port import MediaMetadataExtractorPort
@@ -39,9 +40,56 @@ class MediaInspectionPresenter:
         # WHY: None means "the default": every available item of the inspected playlist (EC-11).
         self.selected_playlist_item_indices: tuple[int, ...] | None = None
         self.selected_subtitle_languages: tuple[str, ...] = ()
+        self.current_playlist_page_number = 1
 
     def handle_media_quality_choice_selected(self, selected_choice_index: int) -> None:
         self.selected_media_quality_choice_index = selected_choice_index
+
+    def handle_playlist_page_requested(self, requested_page_number: int) -> None:
+        self.current_playlist_page_number = requested_page_number
+        self.render_playlist_item_page()
+
+    def handle_playlist_item_checkbox_toggled(
+        self, playlist_item_index: int, is_item_checked: bool
+    ) -> None:
+        inspected_playlist = self.inspected_playlist_or_none()
+        if inspected_playlist is None:
+            return
+        selected_index_set = set(self.resolve_selected_playlist_items(inspected_playlist))
+        if is_item_checked:
+            selected_index_set.add(playlist_item_index)
+        else:
+            selected_index_set.discard(playlist_item_index)
+        self.selected_playlist_item_indices = tuple(sorted(selected_index_set))
+        self.render_playlist_item_page()
+
+    def handle_all_playlist_items_toggled(self, should_check_every_item: bool) -> None:
+        inspected_playlist = self.inspected_playlist_or_none()
+        if inspected_playlist is None:
+            return
+        self.selected_playlist_item_indices = None if should_check_every_item else ()
+        self.render_playlist_item_page()
+
+    def inspected_playlist_or_none(self) -> InspectedMediaSummary | None:
+        inspected_media_summary = self.latest_inspected_media_summary
+        if (
+            inspected_media_summary is None
+            or not inspected_media_summary.is_inspected_media_a_playlist
+        ):
+            return None
+        return inspected_media_summary
+
+    def render_playlist_item_page(self) -> None:
+        inspected_playlist = self.inspected_playlist_or_none()
+        if inspected_playlist is None:
+            return
+        playlist_item_page_view_model = build_playlist_item_page_view_model(
+            inspected_playlist.inspected_playlist_entries,
+            self.resolve_selected_playlist_items(inspected_playlist),
+            self.current_playlist_page_number,
+        )
+        self.current_playlist_page_number = playlist_item_page_view_model.current_page_number
+        self.media_inspection_view.show_playlist_item_page(playlist_item_page_view_model)
 
     def handle_subtitle_language_selection_changed(
         self, selected_subtitle_languages: tuple[str, ...]
@@ -135,6 +183,11 @@ class MediaInspectionPresenter:
         self.media_inspection_view.show_inspected_media_summary(
             build_inspected_media_summary_view_model(inspected_media_summary)
         )
+        self.current_playlist_page_number = 1
+        if inspected_media_summary.is_inspected_media_a_playlist:
+            self.render_playlist_item_page()
+        else:
+            self.media_inspection_view.show_playlist_item_page(None)
         self.request_media_thumbnail_for_summary(inspected_media_summary)
 
     def request_media_thumbnail_for_summary(

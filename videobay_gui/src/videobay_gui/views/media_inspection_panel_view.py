@@ -9,6 +9,8 @@ import customtkinter
 from PIL import Image, UnidentifiedImageError
 
 from videobay_gui.core.inspected_media_summary import InspectedMediaSummaryViewModel
+from videobay_gui.core.playlist_item_page_view_model import PlaylistItemPageViewModel
+from videobay_gui.views.playlist_item_picker_view import PlaylistItemPickerView
 
 MEDIA_THUMBNAIL_DISPLAY_SIZE = (320, 180)
 MEDIA_THUMBNAIL_PLACEHOLDER_TEXT = "Sem miniatura"
@@ -25,9 +27,12 @@ class MediaInspectionPanelView(customtkinter.CTkFrame):
         self.on_media_url_text_changed: Callable[[str], None] = lambda _media_url_text: None
         self.on_inspect_media_url_requested: Callable[[str], None] = lambda _media_url_text: None
         self.on_media_quality_choice_selected: Callable[[int], None] = lambda _choice_index: None
+        self.on_subtitle_languages_changed: Callable[[tuple[str, ...]], None] = lambda _langs: None
         self.media_thumbnail_ctk_image: customtkinter.CTkImage | None = None
+        self.subtitle_checkboxes_by_language: dict[str, customtkinter.CTkCheckBox] = {}
         self.build_media_url_bar_widgets()
         self.build_media_card_widgets()
+        self.playlist_item_picker_view = PlaylistItemPickerView(self)
 
     def build_media_url_bar_widgets(self) -> None:
         media_url_bar_frame = customtkinter.CTkFrame(self, fg_color="transparent")
@@ -67,7 +72,7 @@ class MediaInspectionPanelView(customtkinter.CTkFrame):
             fg_color=("gray85", "gray20"),
             corner_radius=8,
         )
-        self.media_thumbnail_label.grid(row=0, column=0, rowspan=4, padx=12, pady=12, sticky="n")
+        self.media_thumbnail_label.grid(row=0, column=0, rowspan=5, padx=12, pady=12, sticky="n")
         self.media_title_label = customtkinter.CTkLabel(
             self.media_card_frame,
             text="",
@@ -91,6 +96,10 @@ class MediaInspectionPanelView(customtkinter.CTkFrame):
         self.retry_media_inspection_button = customtkinter.CTkButton(
             self.media_card_frame, text="Tentar de novo", command=self.forward_inspect_request
         )
+        self.subtitle_language_frame = customtkinter.CTkFrame(
+            self.media_card_frame, fg_color="transparent"
+        )
+        self.subtitle_language_frame.grid(row=4, column=1, sticky="w", padx=(0, 12), pady=(0, 8))
         self.media_card_frame.grid_columnconfigure(1, weight=1)
 
     def bind_media_inspection_presenter_callbacks(
@@ -102,6 +111,27 @@ class MediaInspectionPanelView(customtkinter.CTkFrame):
         self.on_media_url_text_changed = on_media_url_text_changed
         self.on_inspect_media_url_requested = on_inspect_media_url_requested
         self.on_media_quality_choice_selected = on_media_quality_choice_selected
+
+    def bind_playlist_and_subtitle_callbacks(
+        self,
+        on_subtitle_languages_changed: Callable[[tuple[str, ...]], None],
+        on_playlist_page_requested: Callable[[int], None],
+        on_playlist_item_toggled: Callable[[int, bool], None],
+        on_all_playlist_items_toggled: Callable[[bool], None],
+    ) -> None:
+        self.on_subtitle_languages_changed = on_subtitle_languages_changed
+        self.playlist_item_picker_view.bind_playlist_item_picker_callbacks(
+            on_playlist_page_requested, on_playlist_item_toggled, on_all_playlist_items_toggled
+        )
+
+    def forward_subtitle_language_selection(self) -> None:
+        self.on_subtitle_languages_changed(
+            tuple(
+                subtitle_language
+                for subtitle_language, checkbox in self.subtitle_checkboxes_by_language.items()
+                if checkbox.get()
+            )
+        )
 
     def forward_media_quality_choice_selection(self, selected_choice_label: str) -> None:
         offered_choice_labels = list(self.media_quality_option_menu.cget("values"))
@@ -127,6 +157,8 @@ class MediaInspectionPanelView(customtkinter.CTkFrame):
         self.media_details_label.configure(text="")
         self.media_quality_option_menu.configure(values=[""], state="disabled")
         self.media_quality_option_menu.set("")
+        self.rebuild_subtitle_checkboxes(())
+        self.show_playlist_item_page(None)
         self.show_media_thumbnail_placeholder()
 
     def show_inspected_media_summary(
@@ -140,6 +172,29 @@ class MediaInspectionPanelView(customtkinter.CTkFrame):
         quality_choice_labels = list(inspected_media_view_model.media_quality_choice_labels)
         self.media_quality_option_menu.configure(values=quality_choice_labels, state="normal")
         self.media_quality_option_menu.set(quality_choice_labels[0])
+        self.rebuild_subtitle_checkboxes(inspected_media_view_model.subtitle_language_options)
+
+    def rebuild_subtitle_checkboxes(self, subtitle_language_options: tuple[str, ...]) -> None:
+        for previous_subtitle_checkbox in self.subtitle_checkboxes_by_language.values():
+            previous_subtitle_checkbox.destroy()
+        self.subtitle_checkboxes_by_language = {}
+        for subtitle_language in subtitle_language_options:
+            subtitle_checkbox = customtkinter.CTkCheckBox(
+                self.subtitle_language_frame,
+                text=f"Legenda {subtitle_language}",
+                command=self.forward_subtitle_language_selection,
+            )
+            subtitle_checkbox.pack(side="left", padx=(0, 8))
+            self.subtitle_checkboxes_by_language[subtitle_language] = subtitle_checkbox
+
+    def show_playlist_item_page(
+        self, playlist_item_page_view_model: PlaylistItemPageViewModel | None
+    ) -> None:
+        if playlist_item_page_view_model is None:
+            self.playlist_item_picker_view.pack_forget()
+            return
+        self.playlist_item_picker_view.pack(fill="x", padx=16, pady=(0, 8))
+        self.playlist_item_picker_view.show_playlist_item_page(playlist_item_page_view_model)
 
     def show_media_inspection_failure(
         self, media_inspection_failure_message: str, can_retry_media_inspection: bool

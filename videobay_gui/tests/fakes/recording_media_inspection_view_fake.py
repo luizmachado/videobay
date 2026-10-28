@@ -1,6 +1,7 @@
 from typing import Any
 
 from videobay_gui.core.inspected_media_summary import InspectedMediaSummaryViewModel
+from videobay_gui.core.playlist_item_page_view_model import PlaylistItemPageViewModel
 
 
 class RecordingMediaInspectionViewFake:
@@ -44,6 +45,11 @@ class RecordingMediaInspectionViewFake:
 
     def show_media_thumbnail_placeholder(self) -> None:
         self.recorded_view_calls.append(("show_media_thumbnail_placeholder", None))
+
+    def show_playlist_item_page(
+        self, playlist_item_page_view_model: PlaylistItemPageViewModel | None
+    ) -> None:
+        self.recorded_view_calls.append(("show_playlist_item_page", playlist_item_page_view_model))
 
     def recorded_view_call_names(self) -> list[str]:
         return [view_call_name for view_call_name, _ in self.recorded_view_calls]
