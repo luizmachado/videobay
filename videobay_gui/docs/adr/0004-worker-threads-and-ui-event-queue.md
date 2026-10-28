@@ -11,5 +11,5 @@ uma `queue.Queue`, drenada na thread do Tk via `after(100ms)`. Nenhum widget é 
 Para cancelar, o progress hook verifica uma flag por job e lança `yt_dlp.utils.DownloadCancelled`.
 
 ## Consequências
-O core recebe um `BackgroundWorkerPoolPort`. Nos testes, `ImmediateSynchronousWorkerPoolFake` executa na hora,
-o que torna os testes determinísticos.
+O core recebe um `BackgroundWorkerPoolPort`. Nos testes, `ManuallyDrainedBackgroundWorkerPoolFake` só executa as tarefas quando o teste chama
+`drain_pending_background_tasks()`. Assim, corridas como "resultado antigo chega depois do novo" ficam determinísticas.

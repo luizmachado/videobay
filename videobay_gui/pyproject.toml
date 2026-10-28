@@ -55,6 +55,9 @@ max-nested-blocks = 2
 include = ["src", "tests"]
 pythonVersion = "3.12"
 typeCheckingMode = "strict"
+# WHY: lets editor-launched pyright find the uv venv, not only `uv run pyright`.
+venvPath = "."
+venv = ".venv"
 # PROVENANCE: customtkinter and yt_dlp ship without type stubs; strictness stays on for our own code.
 reportMissingTypeStubs = false
 

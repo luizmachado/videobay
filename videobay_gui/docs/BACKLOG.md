@@ -7,7 +7,7 @@
 - [x] S-001 Validação de sintaxe da URL
   - Aceite: URL http(s) com host é aceita; vazia, sem esquema ou com esquema não-http é rejeitada com motivo
   - Edge cases: EC-01
-- [ ] S-002 `MediaMetadataExtractorPort` + fake + `InspectedMediaSummary`
+- [x] S-002 `MediaMetadataExtractorPort` + fake + `InspectedMediaSummary`
   - Aceite: o presenter mostra título, duração e autor; erros viram mensagens claras; live é rejeitado
   - Edge cases: EC-02, EC-03, EC-17
 - [ ] S-003 `YtDlpMetadataExtractorAdapter` + suíte de contrato

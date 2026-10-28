@@ -5,6 +5,8 @@
 | URL de mídia | Endereço colado pelo usuário | `media_url` |
 | Motivo de rejeição da URL | Por que a sintaxe da URL foi recusada | `MediaUrlRejectionReason` |
 | Inspeção | Consulta de metadados sem baixar | `InspectedMediaSummary`, `InspectedPlaylistSummary` |
+| Falha de inspeção | Categoria de erro ao ler metadados, com mensagem ao usuário | `MediaInspectionFailureKind`, `MediaInspectionFailedError` |
+| Apresentador de inspeção | Liga a barra de URL ao extractor e à view | `MediaInspectionPresenter` |
 | Escolha de qualidade | Resolução alvo ou só áudio | `MediaQualityChoice` |
 | Codec de áudio de saída | Formato da extração de áudio | `AudioOutputCodec` |
 | Pedido de download | Tudo que o usuário escolheu para um download | `VideoDownloadRequest` |

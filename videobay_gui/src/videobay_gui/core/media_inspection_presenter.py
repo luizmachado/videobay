@@ -1,0 +1,112 @@
+from videobay_gui.core.inspected_media_summary import (
+    InspectedMediaSummary,
+    build_inspected_media_summary_view_model,
+)
+from videobay_gui.core.media_inspection_failure import (
+    MediaInspectionFailedError,
+    MediaInspectionFailureKind,
+    describe_media_inspection_failure_for_user,
+    is_media_inspection_failure_retryable,
+)
+from videobay_gui.core.media_url_syntax_validation import (
+    MediaUrlRejectionReason,
+    describe_media_url_rejection_reason_for_user,
+    validate_media_url_syntax,
+)
+from videobay_gui.ports.background_worker_pool_port import BackgroundWorkerPoolPort
+from videobay_gui.ports.media_inspection_view_port import MediaInspectionViewPort
+from videobay_gui.ports.media_metadata_extractor_port import MediaMetadataExtractorPort
+
+
+class MediaInspectionPresenter:
+    def __init__(
+        self,
+        media_inspection_view: MediaInspectionViewPort,
+        media_metadata_extractor: MediaMetadataExtractorPort,
+        background_worker_pool: BackgroundWorkerPoolPort,
+    ) -> None:
+        self.media_inspection_view = media_inspection_view
+        self.media_metadata_extractor = media_metadata_extractor
+        self.background_worker_pool = background_worker_pool
+        self.latest_inspected_media_summary: InspectedMediaSummary | None = None
+        self.latest_requested_media_url: str | None = None
+
+    def handle_media_url_text_changed(self, raw_media_url: str) -> None:
+        media_url_validation_outcome = validate_media_url_syntax(raw_media_url)
+        self.media_inspection_view.show_media_url_validation_message(
+            build_media_url_validation_message_for_view(
+                media_url_validation_outcome.media_url_rejection_reason
+            )
+        )
+        self.media_inspection_view.set_inspect_media_url_action_enabled(
+            media_url_validation_outcome.is_media_url_acceptable
+        )
+
+    def handle_inspect_media_url_requested(self, raw_media_url: str) -> None:
+        media_url_validation_outcome = validate_media_url_syntax(raw_media_url)
+        if not media_url_validation_outcome.is_media_url_acceptable:
+            self.handle_media_url_text_changed(raw_media_url)
+            return
+        requested_media_url = media_url_validation_outcome.normalized_media_url
+        self.latest_requested_media_url = requested_media_url
+        self.latest_inspected_media_summary = None
+        self.media_inspection_view.show_media_inspection_in_progress()
+        self.background_worker_pool.submit_background_task(
+            lambda: self.media_metadata_extractor.extract_inspected_media_summary(
+                requested_media_url
+            ),
+            lambda inspected_summary: self.handle_media_inspection_succeeded(
+                requested_media_url, inspected_summary
+            ),
+            lambda inspection_error: self.handle_media_inspection_failed(
+                requested_media_url, inspection_error
+            ),
+        )
+
+    def handle_media_inspection_succeeded(
+        self, requested_media_url: str, inspected_media_summary: InspectedMediaSummary
+    ) -> None:
+        if requested_media_url != self.latest_requested_media_url:
+            return
+        if inspected_media_summary.is_live_broadcast:
+            self.show_media_inspection_failure_kind(
+                MediaInspectionFailureKind.LIVE_BROADCAST_NOT_SUPPORTED
+            )
+            return
+        self.latest_inspected_media_summary = inspected_media_summary
+        self.media_inspection_view.show_inspected_media_summary(
+            build_inspected_media_summary_view_model(inspected_media_summary)
+        )
+
+    def handle_media_inspection_failed(
+        self, requested_media_url: str, media_inspection_error: Exception
+    ) -> None:
+        if requested_media_url != self.latest_requested_media_url:
+            return
+        if isinstance(media_inspection_error, MediaInspectionFailedError):
+            self.show_media_inspection_failure_kind(
+                media_inspection_error.media_inspection_failure_kind
+            )
+            return
+        self.show_media_inspection_failure_kind(
+            MediaInspectionFailureKind.UNKNOWN_EXTRACTION_FAILURE
+        )
+
+    def show_media_inspection_failure_kind(
+        self, media_inspection_failure_kind: MediaInspectionFailureKind
+    ) -> None:
+        self.media_inspection_view.show_media_inspection_failure(
+            describe_media_inspection_failure_for_user(media_inspection_failure_kind),
+            is_media_inspection_failure_retryable(media_inspection_failure_kind),
+        )
+
+
+def build_media_url_validation_message_for_view(
+    media_url_rejection_reason: MediaUrlRejectionReason | None,
+) -> str | None:
+    if media_url_rejection_reason is None:
+        return None
+    # WHY: an empty box is the normal idle state, so it disables the button without an error.
+    if media_url_rejection_reason is MediaUrlRejectionReason.EMPTY_MEDIA_URL:
+        return None
+    return describe_media_url_rejection_reason_for_user(media_url_rejection_reason)

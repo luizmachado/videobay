@@ -40,7 +40,7 @@
 | `VideobaySettingsStorePort` | `JsonFileVideobaySettingsStoreAdapter` | `InMemoryVideobaySettingsStoreFake` | sim |
 | `ThumbnailImageFetcherPort` | `UrllibThumbnailImageFetcherAdapter` | `StaticThumbnailImageFetcherFake` | sim |
 | `FfmpegAvailabilityProbePort` | `ShutilWhichFfmpegProbeAdapter` | `FixedFfmpegAvailabilityProbeFake` | sim |
-| `BackgroundWorkerPoolPort` | `ThreadingBackgroundWorkerPoolAdapter` | `ImmediateSynchronousWorkerPoolFake` | sim |
+| `BackgroundWorkerPoolPort` | `ThreadingBackgroundWorkerPoolAdapter` | `ManuallyDrainedBackgroundWorkerPoolFake` | sim |
 | `ClockPort` | `SystemMonotonicClockAdapter` | `ManualTickClockFake` | sim |
 
 ## Fluxo de dados (caminho principal)
