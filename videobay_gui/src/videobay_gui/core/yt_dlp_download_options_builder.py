@@ -41,12 +41,9 @@ def build_yt_dlp_download_options(
         "format": build_yt_dlp_format_selector_for_quality(
             video_download_request.media_quality_choice, is_ffmpeg_available
         ),
-        "outtmpl": {
-            "default": os.path.join(
-                video_download_request.output_directory, VIDEOBAY_OUTPUT_FILENAME_TEMPLATE
-            )
-        },
+        "outtmpl": {"default": build_output_path_template(video_download_request)},
         "overwrites": False,
+        **build_yt_dlp_playlist_scope_options(video_download_request),
     }
     audio_output_codec = video_download_request.media_quality_choice.audio_output_codec
     if audio_output_codec is not None:
@@ -93,3 +90,47 @@ def find_download_blocking_problem(
     if video_download_request.media_quality_choice.is_audio_only and not is_ffmpeg_available:
         return FFMPEG_REQUIRED_FOR_AUDIO_EXTRACTION_NOTICE
     return None
+
+
+def build_output_path_template(video_download_request: VideoDownloadRequest) -> str:
+    if not video_download_request.is_playlist_download:
+        return os.path.join(
+            video_download_request.output_directory, VIDEOBAY_OUTPUT_FILENAME_TEMPLATE
+        )
+    # WHY: one folder per playlist, numbered like the playlist, keeps a 96-video course from
+    # flooding the download folder and preserves the intended order.
+    return os.path.join(
+        video_download_request.output_directory,
+        "%(playlist_title)s",
+        "%(playlist_index)s - " + VIDEOBAY_OUTPUT_FILENAME_TEMPLATE,
+    )
+
+
+def build_yt_dlp_playlist_scope_options(
+    video_download_request: VideoDownloadRequest,
+) -> dict[str, Any]:
+    if not video_download_request.is_playlist_download:
+        # WHY: a "watch?v=…&list=…" URL inspected as a single video must not pull the list.
+        return {"noplaylist": True}
+    # WHY: EC-11. One private or deleted item must not abort the rest of the playlist.
+    playlist_scope_options: dict[str, Any] = {"ignoreerrors": True}
+    if video_download_request.selected_playlist_item_indices:
+        playlist_scope_options["playlist_items"] = compress_playlist_item_indices_to_yt_dlp_ranges(
+            video_download_request.selected_playlist_item_indices
+        )
+    return playlist_scope_options
+
+
+def compress_playlist_item_indices_to_yt_dlp_ranges(playlist_item_indices: tuple[int, ...]) -> str:
+    sorted_unique_indices = sorted(set(playlist_item_indices))
+    index_ranges: list[tuple[int, int]] = []
+    for playlist_item_index in sorted_unique_indices:
+        if index_ranges and playlist_item_index == index_ranges[-1][1] + 1:
+            index_ranges[-1] = (index_ranges[-1][0], playlist_item_index)
+            continue
+        index_ranges.append((playlist_item_index, playlist_item_index))
+    # PROVENANCE: yt-dlp --playlist-items syntax, e.g. "1-3,7,9-10" (1-based, inclusive).
+    return ",".join(
+        str(range_start) if range_start == range_end else f"{range_start}-{range_end}"
+        for range_start, range_end in index_ranges
+    )

@@ -48,7 +48,7 @@
 ## F-05 Playlists e legendas
 - [x] S-019 Detecção de playlist + listagem flat
   - Edge cases: EC-12
-- [ ] S-020 Seleção de itens → `playlist_items`
+- [x] S-020 Seleção de itens → `playlist_items`
   - Edge cases: EC-11
 - [ ] S-021 Legendas
   - Edge cases: EC-13

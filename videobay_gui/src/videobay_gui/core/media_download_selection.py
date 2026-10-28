@@ -10,3 +10,5 @@ class MediaDownloadSelection:
     media_url: str
     media_quality_choice: MediaQualityChoice
     media_display_title: str
+    is_playlist_selection: bool = False
+    selected_playlist_item_indices_for_download: tuple[int, ...] = ()

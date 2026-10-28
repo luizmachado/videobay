@@ -36,9 +36,16 @@ class MediaInspectionPresenter:
         self.latest_inspected_media_summary: InspectedMediaSummary | None = None
         self.latest_requested_media_url: str | None = None
         self.selected_media_quality_choice_index = 0
+        # WHY: None means "the default": every available item of the inspected playlist (EC-11).
+        self.selected_playlist_item_indices: tuple[int, ...] | None = None
 
     def handle_media_quality_choice_selected(self, selected_choice_index: int) -> None:
         self.selected_media_quality_choice_index = selected_choice_index
+
+    def handle_playlist_item_selection_changed(
+        self, selected_playlist_item_indices: tuple[int, ...]
+    ) -> None:
+        self.selected_playlist_item_indices = selected_playlist_item_indices
 
     def current_download_selection(self) -> MediaDownloadSelection | None:
         inspected_media_summary = self.latest_inspected_media_summary
@@ -55,6 +62,21 @@ class MediaInspectionPresenter:
             inspected_media_summary.media_url,
             offered_media_quality_choices[selected_choice_index],
             inspected_media_summary.media_title,
+            is_playlist_selection=inspected_media_summary.is_inspected_media_a_playlist,
+            selected_playlist_item_indices_for_download=self.resolve_selected_playlist_items(
+                inspected_media_summary
+            ),
+        )
+
+    def resolve_selected_playlist_items(
+        self, inspected_media_summary: InspectedMediaSummary
+    ) -> tuple[int, ...]:
+        if self.selected_playlist_item_indices is not None:
+            return self.selected_playlist_item_indices
+        return tuple(
+            playlist_entry.playlist_item_index
+            for playlist_entry in inspected_media_summary.inspected_playlist_entries
+            if playlist_entry.is_playlist_entry_available
         )
 
     def handle_media_url_text_changed(self, raw_media_url: str) -> None:
@@ -101,6 +123,7 @@ class MediaInspectionPresenter:
             return
         self.latest_inspected_media_summary = inspected_media_summary
         self.selected_media_quality_choice_index = 0
+        self.selected_playlist_item_indices = None
         self.media_inspection_view.show_inspected_media_summary(
             build_inspected_media_summary_view_model(inspected_media_summary)
         )

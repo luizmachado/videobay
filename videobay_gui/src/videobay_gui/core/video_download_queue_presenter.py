@@ -35,6 +35,7 @@ from videobay_gui.ports.videobay_settings_store_port import VideobaySettingsStor
 
 NO_INSPECTED_MEDIA_TO_DOWNLOAD_NOTICE = "Busque um vídeo antes de baixar."
 DUPLICATE_DOWNLOAD_ALREADY_QUEUED_NOTICE = "Esse download já está na fila."
+NO_PLAYLIST_ITEMS_SELECTED_NOTICE = "Marque ao menos um vídeo da playlist."
 
 
 @dataclass(frozen=True)
@@ -61,6 +62,7 @@ class VideoDownloadQueuePresenter:
             queue_ports.videobay_settings_store, queue_ports.output_directory_access_probe
         )
         self.yt_dlp_options_by_job: dict[int, dict[str, Any]] = {}
+        self.expected_playlist_item_count_by_job: dict[int, int] = {}
         self.outcome_messages_by_job: dict[int, str] = {}
         self.retryable_failure_by_job: dict[int, bool] = {}
         self.cancellation_requested_jobs: set[int] = set()
@@ -99,6 +101,14 @@ class VideoDownloadQueuePresenter:
         if media_download_selection is None:
             self.queue_view.show_download_notice(NO_INSPECTED_MEDIA_TO_DOWNLOAD_NOTICE)
             return
+        selected_playlist_items = (
+            media_download_selection.selected_playlist_item_indices_for_download
+        )
+        # WHY: an empty item filter means "whole playlist" to yt-dlp; unchecking everything must
+        # never turn into downloading everything.
+        if media_download_selection.is_playlist_selection and not selected_playlist_items:
+            self.queue_view.show_download_notice(NO_PLAYLIST_ITEMS_SELECTED_NOTICE)
+            return
         output_directory = self.output_directory_preference.load_preferred_output_directory()
         # WHY: the folder may have been unmounted or deleted since it was chosen (EC-06).
         if not self.show_output_directory_problem_if_any(output_directory):
@@ -107,6 +117,8 @@ class VideoDownloadQueuePresenter:
             media_download_selection.media_url,
             media_download_selection.media_quality_choice,
             output_directory,
+            is_playlist_download=media_download_selection.is_playlist_selection,
+            selected_playlist_item_indices=selected_playlist_items,
         )
         is_ffmpeg_available = (
             self.queue_ports.ffmpeg_availability_probe.is_ffmpeg_executable_available()
@@ -141,6 +153,10 @@ class VideoDownloadQueuePresenter:
         self.yt_dlp_options_by_job[new_job_identifier] = (
             download_options_build_result.yt_dlp_download_options
         )
+        if video_download_request.is_playlist_download:
+            self.expected_playlist_item_count_by_job[new_job_identifier] = len(
+                video_download_request.selected_playlist_item_indices
+            )
         self.queue_view.show_download_notice(download_options_build_result.ffmpeg_fallback_notice)
         self.show_job_row(new_job_identifier)
         self.start_jobs_with_free_slots()
@@ -196,7 +212,9 @@ class VideoDownloadQueuePresenter:
         self, job_identifier: int, media_download_outcome: MediaDownloadOutcome
     ) -> None:
         self.outcome_messages_by_job[job_identifier] = (
-            describe_finished_download_outcome_for_job_row(media_download_outcome)
+            describe_finished_download_outcome_for_job_row(
+                media_download_outcome, self.expected_playlist_item_count_by_job.get(job_identifier)
+            )
         )
         self.finish_job(job_identifier, VideoDownloadJobStatus.COMPLETED)
 
