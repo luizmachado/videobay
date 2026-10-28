@@ -10,7 +10,7 @@
 - [x] S-002 `MediaMetadataExtractorPort` + fake + `InspectedMediaSummary`
   - Aceite: o presenter mostra título, duração e autor; erros viram mensagens claras; live é rejeitado
   - Edge cases: EC-02, EC-03, EC-17
-- [ ] S-003 `YtDlpMetadataExtractorAdapter` + suíte de contrato
+- [x] S-003 `YtDlpMetadataExtractorAdapter` + suíte de contrato
   - Aceite: o mesmo contrato passa contra o fake e (em integração) contra o yt-dlp real
 - [ ] S-004 Formatos disponíveis → opções de qualidade
   - Aceite: só oferece resoluções que existem; "melhor" e "só áudio" sempre presentes
