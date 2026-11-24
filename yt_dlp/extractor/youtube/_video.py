@@ -141,7 +141,7 @@ class YoutubeIE(YoutubeBaseInfoExtractor):
     _RETURN_TYPE = 'video'  # XXX: How to handle multifeed?
 
     _SUBTITLE_FORMATS = ('json3', 'srv1', 'srv2', 'srv3', 'ttml', 'srt', 'vtt')
-    _DEFAULT_CLIENTS = ('tv_samsung', 'visionos', 'web')
+    _DEFAULT_CLIENTS = ('tv_samsung', 'visionos')
     _DEFAULT_JSLESS_CLIENTS = ('visionos',)
     _DEFAULT_AUTHED_CLIENTS = ('tv_samsung', 'web_embedded', 'web')
     # Premium does not require POT (except for subtitles)
@@ -1918,6 +1918,8 @@ class YoutubeIE(YoutubeBaseInfoExtractor):
         # If forcing a player version, the webpage player response must be skipped
         if self._player_js_version != 'actual':
             skipped.add('player_response')
+        # TODO: Remove the line below when player JS variant `tcl` support is solved
+        skipped.add('player_response')
         return skipped
 
     @classmethod
